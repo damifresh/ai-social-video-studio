@@ -1,0 +1,10 @@
+{
+  "final_video": "/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/9eccd854-5556-4933-9113-2091b58b94fe/renders/final_9x16_720p.mp4",
+  "srt": "/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/9eccd854-5556-4933-9113-2091b58b94fe/subs/subtitles.srt",
+  "vtt": "/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/9eccd854-5556-4933-9113-2091b58b94fe/subs/subtitles.vtt",
+  "duration_sec": 78.83,
+  "aspect_ratio": "9:16",
+  "resolution": "720p",
+  "scenes": 4,
+  "tts_engine": "macos-say"
+}

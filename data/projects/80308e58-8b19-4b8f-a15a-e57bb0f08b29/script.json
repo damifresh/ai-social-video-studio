@@ -1,0 +1,66 @@
+{
+  "title": "Demo 60s 16:9",
+  "topic": "How small daily habits create extraordinary results over time",
+  "prompt": "How small daily habits create extraordinary results over time",
+  "style": "motivational",
+  "language": "en",
+  "duration_sec": 60,
+  "scene_count": 4,
+  "word_count": 221,
+  "target_words": 140,
+  "hook": "What if How small daily habits create extraordinary results over time could change the way you see the world around you? Right now, there is more to this story than most people realize.",
+  "closing": "So, as we reach the end, remember this: How small daily habits create extraordinary results over time is more than a single idea — it is a journey of understanding, growth, and possibility. Take the first step now and keep moving forward. Thank you for watching, and keep exploring what comes next.",
+  "full_text": "What if How small daily habits create extraordinary results over time could change the way you see the world around you? Right now, there is more to this story than most people realize. In this uplifting and energetic video, we explore How small daily habits create extraordinary results over time. How small daily habits create extraordinary results over time Together, we will break it down step by step so it is easy to follow and remember.\n\nFirst, it is important to understand the foundation of How small daily habits create extraordinary results over time. At a basic level, it begins with ideas and actions that shape what comes next. When you recognize these building blocks, the bigger picture starts to make sense.\n\nNext, consider how How small daily habits create extraordinary results over time shows up in real situations. It is not just an abstract concept; it influences decisions, behaviors, and results in ways we can observe every day. Seeing these connections makes the topic more practical and relevant.\n\nSo, as we reach the end, remember this: How small daily habits create extraordinary results over time is more than a single idea — it is a journey of understanding, growth, and possibility. Take the first step now and keep moving forward. Thank you for watching, and keep exploring what comes next.",
+  "scenes": [
+    {
+      "index": 0,
+      "title": "Hook",
+      "narration": "What if How small daily habits create extraordinary results over time could change the way you see the world around you? Right now, there is more to this story than most people realize. In this uplifting and energetic video, we explore How small daily habits create extraordinary results over time. How small daily habits create extraordinary results over time Together, we will break it down step by step so it is easy to follow and remember.",
+      "duration_sec": 15,
+      "visual_description": "Uplifting and energetic visual representation of How small daily habits create extraordinary results over time: What if How small daily habits create extraordinary results over time could change the way you see the world around you? Right now, there is",
+      "camera": "slow_zoom_in",
+      "transition": "fade",
+      "sfx": "whoosh_soft",
+      "text_overlay": "How small daily habits create extraordinary results over time",
+      "visual_kind": "animated_graphic"
+    },
+    {
+      "index": 1,
+      "title": "Context",
+      "narration": "First, it is important to understand the foundation of How small daily habits create extraordinary results over time. At a basic level, it begins with ideas and actions that shape what comes next. When you recognize these building blocks, the bigger picture starts to make sense.",
+      "duration_sec": 15,
+      "visual_description": "Uplifting and energetic visual representation of How small daily habits create extraordinary results over time: First, it is important to understand the foundation of How small daily habits create extraordinary results over time. At a basic level, it b",
+      "camera": "slow_pan_right",
+      "transition": "crossfade",
+      "sfx": "none",
+      "text_overlay": "First, it is important to understand the foundation of How small daily",
+      "visual_kind": "animated_graphic"
+    },
+    {
+      "index": 2,
+      "title": "Insight",
+      "narration": "Next, consider how How small daily habits create extraordinary results over time shows up in real situations. It is not just an abstract concept; it influences decisions, behaviors, and results in ways we can observe every day. Seeing these connections makes the topic more practical and relevant.",
+      "duration_sec": 15,
+      "visual_description": "Uplifting and energetic visual representation of How small daily habits create extraordinary results over time: Next, consider how How small daily habits create extraordinary results over time shows up in real situations. It is not just an abstract con",
+      "camera": "slow_zoom_out",
+      "transition": "crossfade",
+      "sfx": "none",
+      "text_overlay": "Next, consider how How small daily habits create extraordinary results",
+      "visual_kind": "animated_graphic"
+    },
+    {
+      "index": 3,
+      "title": "Closing",
+      "narration": "So, as we reach the end, remember this: How small daily habits create extraordinary results over time is more than a single idea — it is a journey of understanding, growth, and possibility. Take the first step now and keep moving forward. Thank you for watching, and keep exploring what comes next.",
+      "duration_sec": 15,
+      "visual_description": "Uplifting and energetic visual representation of How small daily habits create extraordinary results over time: So, as we reach the end, remember this: How small daily habits create extraordinary results over time is more than a single idea — it is a j",
+      "camera": "slow_pan_left",
+      "transition": "fadeblack",
+      "sfx": "whoosh_soft",
+      "text_overlay": "So, as we reach the end, remember this: How small daily habits create ",
+      "visual_kind": "animated_graphic"
+    }
+  ],
+  "generator": "deterministic-local-v2",
+  "notes": "Locally generated editable script (no cloud LLM). Narration is expanded to target duration. Edit any scene before rendering."
+}

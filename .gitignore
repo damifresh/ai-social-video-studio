@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Data / generated
+data/projects/*/renders/
+data/projects/*/video/tmp/
+data/projects/*/logs/*.log
+*.mp4
+*.wav
+*.aiff
+*.srt
+*.vtt
+!assets/**/*.mp3
+!assets/**/*.wav
+
+# Models (large, downloaded separately)
+models/
+!models/.gitkeep
+!models/README.md
+
+# OS / IDE
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# keep demo deliverables (explicit)
+!deliverables/*.mp4
+!deliverables/*.srt
+!deliverables/*.json
+
+# large project artifacts (kept locally, not versioned except samples metadata)
+data/studio.db
+data/projects/**/video/
+data/projects/**/renders/
+data/projects/**/audio/
+data/projects/**/images/
+data/projects/**/logs/
+!data/projects/.gitkeep
+
+# frontend build cache
+frontend/node_modules/
+frontend/dist/
+
+# backend venv
+backend/.venv/
+
+# uv/python caches
+**/__pycache__/

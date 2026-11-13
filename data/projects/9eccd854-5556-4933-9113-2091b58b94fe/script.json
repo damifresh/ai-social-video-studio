@@ -1,0 +1,66 @@
+{
+  "title": "Demo 60s 9:16",
+  "topic": "A short cinematic story about exploring a quiet city at sunrise",
+  "prompt": "A short cinematic story about exploring a quiet city at sunrise",
+  "style": "cinematic",
+  "language": "en",
+  "duration_sec": 60,
+  "scene_count": 4,
+  "word_count": 232,
+  "target_words": 140,
+  "hook": "What if A short cinematic story about exploring a quiet city at sunrise could change the way you see the world around you? Right now, there is more to this story than most people realize.",
+  "closing": "So, as we reach the end, remember this: A short cinematic story about exploring a quiet city at sunrise is more than a single idea — it is a journey of understanding, growth, and possibility. Stay with this story, and let it unfold. Thank you for watching, and keep exploring what comes next.",
+  "full_text": "What if A short cinematic story about exploring a quiet city at sunrise could change the way you see the world around you? Right now, there is more to this story than most people realize. In this cinematic and evocative video, we explore A short cinematic story about exploring a quiet city at sunrise. A short cinematic story about exploring a quiet city at sunrise Together, we will break it down step by step so it is easy to follow and remember.\n\nFirst, it is important to understand the foundation of A short cinematic story about exploring a quiet city at sunrise. At a basic level, it begins with ideas and actions that shape what comes next. When you recognize these building blocks, the bigger picture starts to make sense.\n\nNext, consider how A short cinematic story about exploring a quiet city at sunrise shows up in real situations. It is not just an abstract concept; it influences decisions, behaviors, and results in ways we can observe every day. Seeing these connections makes the topic more practical and relevant.\n\nSo, as we reach the end, remember this: A short cinematic story about exploring a quiet city at sunrise is more than a single idea — it is a journey of understanding, growth, and possibility. Stay with this story, and let it unfold. Thank you for watching, and keep exploring what comes next.",
+  "scenes": [
+    {
+      "index": 0,
+      "title": "Hook",
+      "narration": "What if A short cinematic story about exploring a quiet city at sunrise could change the way you see the world around you? Right now, there is more to this story than most people realize. In this cinematic and evocative video, we explore A short cinematic story about exploring a quiet city at sunrise. A short cinematic story about exploring a quiet city at sunrise Together, we will break it down step by step so it is easy to follow and remember.",
+      "duration_sec": 15,
+      "visual_description": "Cinematic and evocative visual representation of A short cinematic story about exploring a quiet city at sunrise: What if A short cinematic story about exploring a quiet city at sunrise could change the way you see the world around you? Right now, there ",
+      "camera": "slow_zoom_in",
+      "transition": "fade",
+      "sfx": "whoosh_soft",
+      "text_overlay": "A short cinematic story about exploring a quiet city at sunrise",
+      "visual_kind": "animated_graphic"
+    },
+    {
+      "index": 1,
+      "title": "Context",
+      "narration": "First, it is important to understand the foundation of A short cinematic story about exploring a quiet city at sunrise. At a basic level, it begins with ideas and actions that shape what comes next. When you recognize these building blocks, the bigger picture starts to make sense.",
+      "duration_sec": 15,
+      "visual_description": "Cinematic and evocative visual representation of A short cinematic story about exploring a quiet city at sunrise: First, it is important to understand the foundation of A short cinematic story about exploring a quiet city at sunrise. At a basic level, it",
+      "camera": "slow_pan_right",
+      "transition": "crossfade",
+      "sfx": "none",
+      "text_overlay": "First, it is important to understand the foundation of A short cinemat",
+      "visual_kind": "animated_graphic"
+    },
+    {
+      "index": 2,
+      "title": "Insight",
+      "narration": "Next, consider how A short cinematic story about exploring a quiet city at sunrise shows up in real situations. It is not just an abstract concept; it influences decisions, behaviors, and results in ways we can observe every day. Seeing these connections makes the topic more practical and relevant.",
+      "duration_sec": 15,
+      "visual_description": "Cinematic and evocative visual representation of A short cinematic story about exploring a quiet city at sunrise: Next, consider how A short cinematic story about exploring a quiet city at sunrise shows up in real situations. It is not just an abstract c",
+      "camera": "slow_zoom_out",
+      "transition": "crossfade",
+      "sfx": "none",
+      "text_overlay": "Next, consider how A short cinematic story about exploring a quiet cit",
+      "visual_kind": "animated_graphic"
+    },
+    {
+      "index": 3,
+      "title": "Closing",
+      "narration": "So, as we reach the end, remember this: A short cinematic story about exploring a quiet city at sunrise is more than a single idea — it is a journey of understanding, growth, and possibility. Stay with this story, and let it unfold. Thank you for watching, and keep exploring what comes next.",
+      "duration_sec": 15,
+      "visual_description": "Cinematic and evocative visual representation of A short cinematic story about exploring a quiet city at sunrise: So, as we reach the end, remember this: A short cinematic story about exploring a quiet city at sunrise is more than a single idea — it is a",
+      "camera": "slow_pan_left",
+      "transition": "fadeblack",
+      "sfx": "whoosh_soft",
+      "text_overlay": "So, as we reach the end, remember this: A short cinematic story about ",
+      "visual_kind": "animated_graphic"
+    }
+  ],
+  "generator": "deterministic-local-v2",
+  "notes": "Locally generated editable script (no cloud LLM). Narration is expanded to target duration. Edit any scene before rendering."
+}

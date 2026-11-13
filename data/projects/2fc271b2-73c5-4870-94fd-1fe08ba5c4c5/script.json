@@ -1,0 +1,62 @@
+{
+  "title": "Demo 60s",
+  "topic": "The power of morning routines",
+  "prompt": "The power of morning routines",
+  "style": "motivational",
+  "language": "en",
+  "duration_sec": 60,
+  "scene_count": 4,
+  "word_count": 86,
+  "target_words": 145,
+  "hook": "What if the power of morning routines could change the way you see things?",
+  "closing": "The power of morning routines is more than a headline — it is a story unfolding right now. Take the first step now.",
+  "full_text": "What if the power of morning routines could change the way you see things? In this uplifting and energetic video, we explore The power of morning routines. The power of morning routines\n\nThe power of morning routines matters because it shapes real decisions and everyday outcomes.\n\nAt its core, The power of morning routines brings together key ideas that are easy to overlook.\n\nThe power of morning routines is more than a headline — it is a story unfolding right now. Take the first step now.",
+  "scenes": [
+    {
+      "index": 0,
+      "title": "Hook",
+      "narration": "What if the power of morning routines could change the way you see things? In this uplifting and energetic video, we explore The power of morning routines. The power of morning routines",
+      "duration_sec": 8,
+      "visual_description": "A uplifting and energetic visual representing: What if the power of morning routines could change the way you see things? In this uplifting and energetic video, we explore The power of mo",
+      "camera": "slow_zoom_in",
+      "transition": "fade",
+      "sfx": "whoosh_soft",
+      "text_overlay": "The power of morning routines"
+    },
+    {
+      "index": 1,
+      "title": "Context",
+      "narration": "The power of morning routines matters because it shapes real decisions and everyday outcomes.",
+      "duration_sec": 17,
+      "visual_description": "A uplifting and energetic visual representing: The power of morning routines matters because it shapes real decisions and everyday outcomes.",
+      "camera": "slow_pan_right",
+      "transition": "crossfade",
+      "sfx": "none",
+      "text_overlay": "The power of morning routines matters because it shapes real"
+    },
+    {
+      "index": 2,
+      "title": "Insight",
+      "narration": "At its core, The power of morning routines brings together key ideas that are easy to overlook.",
+      "duration_sec": 18,
+      "visual_description": "A uplifting and energetic visual representing: At its core, The power of morning routines brings together key ideas that are easy to overlook.",
+      "camera": "slow_zoom_out",
+      "transition": "crossfade",
+      "sfx": "none",
+      "text_overlay": "At its core, The power of morning routines brings together k"
+    },
+    {
+      "index": 3,
+      "title": "Deep Dive",
+      "narration": "The power of morning routines is more than a headline — it is a story unfolding right now. Take the first step now.",
+      "duration_sec": 17,
+      "visual_description": "A uplifting and energetic visual representing: The power of morning routines is more than a headline — it is a story unfolding right now. Take the first step now.",
+      "camera": "slow_pan_left",
+      "transition": "fadeblack",
+      "sfx": "whoosh_soft",
+      "text_overlay": "The power of morning routines is more than a headline — it i"
+    }
+  ],
+  "generator": "deterministic-local-v1",
+  "notes": "Locally generated editable script (no cloud LLM). You can edit any scene before rendering."
+}

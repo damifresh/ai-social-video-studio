@@ -1,0 +1,52 @@
+{
+  "scenes": [
+    {
+      "index": 0,
+      "title": "Hook",
+      "narration": "What if test topic could change the way you see the world around you? Right now, there is more to this story than most people realize. In this clear and instructive video, we explore test topic. Together, we will break it down step by step so it is easy to follow and remember.",
+      "duration_sec": 15,
+      "visual_description": "Clear and instructive visual representation of test topic: What if test topic could change the way you see the world around you? Right now, there is more to this story than most people realize. In th",
+      "camera": "slow_zoom_in",
+      "transition": "fade",
+      "sfx": "whoosh_soft",
+      "text_overlay": "test topic",
+      "visual_kind": "animated_graphic"
+    },
+    {
+      "index": 1,
+      "title": "Context",
+      "narration": "First, it is important to understand the foundation of test topic. At a basic level, it begins with ideas and actions that shape what comes next. When you recognize these building blocks, the bigger picture starts to make sense.",
+      "duration_sec": 15,
+      "visual_description": "Clear and instructive visual representation of test topic: First, it is important to understand the foundation of test topic. At a basic level, it begins with ideas and actions that shape what comes ",
+      "camera": "slow_pan_right",
+      "transition": "crossfade",
+      "sfx": "none",
+      "text_overlay": "First, it is important to understand the foundation of test topic",
+      "visual_kind": "animated_graphic"
+    },
+    {
+      "index": 2,
+      "title": "Insight",
+      "narration": "Next, consider how test topic shows up in real situations. It is not just an abstract concept; it influences decisions, behaviors, and results in ways we can observe every day. Seeing these connections makes the topic more practical and relevant.",
+      "duration_sec": 15,
+      "visual_description": "Clear and instructive visual representation of test topic: Next, consider how test topic shows up in real situations. It is not just an abstract concept; it influences decisions, behaviors, and resul",
+      "camera": "slow_zoom_out",
+      "transition": "crossfade",
+      "sfx": "none",
+      "text_overlay": "Next, consider how test topic shows up in real situations",
+      "visual_kind": "animated_graphic"
+    },
+    {
+      "index": 3,
+      "title": "Closing",
+      "narration": "So, as we reach the end, remember this: test topic is more than a single idea — it is a journey of understanding, growth, and possibility. Try applying this idea step by step today. Thank you for watching, and keep exploring what comes next.",
+      "duration_sec": 15,
+      "visual_description": "Clear and instructive visual representation of test topic: So, as we reach the end, remember this: test topic is more than a single idea — it is a journey of understanding, growth, and possibility. T",
+      "camera": "slow_pan_left",
+      "transition": "fadeblack",
+      "sfx": "whoosh_soft",
+      "text_overlay": "So, as we reach the end, remember this: test topic is more than a sing",
+      "visual_kind": "animated_graphic"
+    }
+  ]
+}
