@@ -1,0 +1,18 @@
+{
+  "final_video": "/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/f6c75e7b-3144-4338-88bd-dc5bff3c3dea/renders/final_16x9_720p.mp4",
+  "srt": "/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/f6c75e7b-3144-4338-88bd-dc5bff3c3dea/subs/subtitles.srt",
+  "vtt": "/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/f6c75e7b-3144-4338-88bd-dc5bff3c3dea/subs/subtitles.vtt",
+  "ass": "/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/f6c75e7b-3144-4338-88bd-dc5bff3c3dea/subs/subtitles.ass",
+  "duration_sec": 329.1,
+  "aspect_ratio": "16:9",
+  "resolution": "1280x720",
+  "fps": 30.0,
+  "size_bytes": 21443470,
+  "bitrate_kbps": 521,
+  "scenes": 15,
+  "subtitles_burned": true,
+  "subtitle_cues": 147,
+  "peak_memory_mb": 746,
+  "render_seconds": 69.59,
+  "completed_at": "2026-11-14T15:48:42.583132Z"
+}

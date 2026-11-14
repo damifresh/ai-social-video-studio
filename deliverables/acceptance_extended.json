@@ -1,0 +1,73 @@
+{
+  "base": "http://127.0.0.1:8000",
+  "results": [
+    {
+      "case": {
+        "title": "Acceptance 5min 16:9",
+        "topic": "The quiet revolution in urban farming",
+        "prompt": "A five-minute documentary. Open on a rooftop garden at sunrise, explain why cities are rethinking food production, cover hydroponics and soil-based rooftop farms, discuss water and energy trade-offs, profile a community project, and close with what the next decade could look like.",
+        "minutes": 5,
+        "aspect": "16:9",
+        "style": "documentary",
+        "music": "ambient_calm_loop.wav",
+        "fps": 30
+      },
+      "project_id": "f6c75e7b-3144-4338-88bd-dc5bff3c3dea",
+      "ok": true,
+      "generate_seconds": 72.3,
+      "duration_sec": 329.1,
+      "resolution": "1280x720",
+      "fps": 30.0,
+      "size_bytes": 21443470,
+      "bitrate_kbps": 521,
+      "peak_memory_mb": 746,
+      "render_seconds": 69.59,
+      "subtitles_burned": true,
+      "subtitle_cues": 147,
+      "scenes": 15,
+      "timings_total_sec": 329.12,
+      "last_cue_end": 328.87,
+      "video": "/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/f6c75e7b-3144-4338-88bd-dc5bff3c3dea/renders/final_16x9_720p.mp4",
+      "video_exists": true,
+      "video_bytes_on_disk": 21443470,
+      "tts_engines": [
+        "macos-say"
+      ],
+      "fallbacks": []
+    },
+    {
+      "case": {
+        "title": "Acceptance 1min 1:1",
+        "topic": "Three ways to make a small room feel bigger",
+        "prompt": "Fast, practical interior-design tips with one concrete example per tip and a short close.",
+        "minutes": 1,
+        "aspect": "1:1",
+        "style": "faceless",
+        "music": "ambient_upbeat_loop.wav",
+        "fps": 30
+      },
+      "project_id": "1dd46376-cc30-4551-8faa-7ca3475afcfa",
+      "ok": true,
+      "generate_seconds": 15.1,
+      "duration_sec": 74.61,
+      "resolution": "720x720",
+      "fps": 30.0,
+      "size_bytes": 3821675,
+      "bitrate_kbps": 409,
+      "peak_memory_mb": 490,
+      "render_seconds": 13.95,
+      "subtitles_burned": true,
+      "subtitle_cues": 34,
+      "scenes": 4,
+      "timings_total_sec": 74.61,
+      "last_cue_end": 74.36,
+      "video": "/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/1dd46376-cc30-4551-8faa-7ca3475afcfa/renders/final_1x1_720p.mp4",
+      "video_exists": true,
+      "video_bytes_on_disk": 3821675,
+      "tts_engines": [
+        "macos-say"
+      ],
+      "fallbacks": []
+    }
+  ]
+}

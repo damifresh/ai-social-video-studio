@@ -49,8 +49,15 @@ def generate_script(topic: str, prompt: str, title: str, duration_min: int, styl
     scene_count = max(4, min(20, round(duration_sec / 20)))
     target_words_total = max(120, round(duration_sec / 60 * WPM))
 
-    hook = f"What if {topic} could change the way you see the world around you? " \
-           f"Right now, there is more to this story than most people realize."
+    starts_with_question = bool(re.match(
+        r"(?i)^(how|what|why|when|where|who|which|can|could|do|does|did|is|are|was|were|should|will|would)\b", topic
+    ))
+    if starts_with_question:
+        hooked = topic[:1].upper() + topic[1:]
+        hook = f"{hooked}? That question sits at the center of a story most people never slow down to examine."
+    else:
+        hook = f"What if {topic} could change the way you see the world around you? " \
+               f"Right now, there is more to this story than most people realize."
     intro = f"In this {st['tone']} video, we explore {topic}. " \
             f"{(prompt + ' ') if prompt else ''}Together, we will break it down step by step so it is easy to follow and remember."
 

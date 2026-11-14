@@ -1,0 +1,62 @@
+{
+  "name": "local-ai-video-studio-desktop",
+  "productName": "AI Social Video Studio",
+  "version": "1.0.0",
+  "description": "Fully local AI social video studio for macOS (Apple Silicon). No cloud inference, no accounts.",
+  "author": "Local AI Social Video Studio",
+  "license": "MIT",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --mac --arm64"
+  },
+  "devDependencies": {
+    "electron": "45.3.2",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "studio.local.aisocialvideo",
+    "productName": "AI Social Video Studio",
+    "copyright": "Fully local build. Bundled music/SFX are CC0-1.0.",
+    "directories": {
+      "output": "../dist-desktop",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources",
+        "to": "runtime",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "asar": true,
+    "electronDist": "node_modules/electron/dist",
+    "mac": {
+      "category": "public.app-category.video",
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "build/icon.icns",
+      "identity": null,
+      "darkModeSupport": true,
+      "minimumSystemVersion": "12.0",
+      "extendInfo": {
+        "NSHumanReadableCopyright": "Local-only build. Bundled media is CC0-1.0.",
+        "LSApplicationCategoryType": "public.app-category.video"
+      }
+    }
+  }
+}

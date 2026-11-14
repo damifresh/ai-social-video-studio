@@ -27,8 +27,18 @@
 - Measure with Activity Monitor / `vm_stat` / `/usr/bin/time -l` during acceptance tests; record peak RSS/unified memory pressure.
 - On OOM or crash: re-run generation; completed per-scene artifacts remain on disk. (Full automatic resume-from-stage is incremental; current behavior is safe/idempotent per output file.)
 
-## Known limitations (this machine/session)
-- Python 3.9 system; MLX/Kokoro packages typically need 3.10+ isolated env and model downloads (not fully installed/verified here).
-- Whisper.cpp binary/models not installed in this session; subtitle alignment uses narration-timing generation (accurate to synthesized audio, no ASR correction).
-- No bundled licensed music/SFX shipped by default; user must supply properly licensed files in `assets/music` or `assets/sfx`.
-- Motion Canvas and diffusion video generation not enabled by default on 8 GB.
+## Verified measurements (Apple M2 / 8 GB, macOS 27.0.1)
+
+- **1-min class renders (16:9/9:16/1:1, 24–30 fps):** ~70–79 s output, ~4–5.4 MB, **peak 490–730 MB** sampled, ~10–17 s generate time.
+- **3-min 16:9:** 183.55 s output, 8.51 MB (earlier verified demo).
+- **5-min 16:9 (narration-driven 329.1 s, 15 scenes, 147 cues):** 21.44 MB, **peak 746 MB** sampled, generate 72.3 s — completed without OOM under memory pressure (~1.4 GB free / swap in use).
+- **Packaged desktop render:** 73.66 s output, 5.17 MB, peak 728 MB, successful through bundled Python/FFmpeg inside the `.app`.
+
+## Current limitations (honest)
+
+- **Kokoro MLX / Whisper.cpp:** not installed or runtime-verified in this build. Narration uses macOS `say` (offline) and subtitles use narration-timing segmentation (accurate to synthesized boundaries, no ASR correction). Fallbacks are recorded in metadata.
+- **Diffusion image/video generation:** not enabled/assumed feasible on 8 GB. Visuals are animated graphics/stills (labeled), not AI-generated footage.
+- **Narration-driven duration:** final length follows synthesized speech (measured ~174 wpm for Samantha), so 1-min/5-min targets can overshoot (e.g. ~74–79 s, 329 s) unless script/narration is shortened.
+- **Memory metric:** jobs report sampled process RSS peak; not a formal `/usr/bin/time -l` max-RSS measurement.
+- **Music/SFX:** bundled tracks are original procedural CC0 audio (`scripts/generate_assets.py`); add your own properly licensed files as needed.
+- **Desktop app:** unsigned (Gatekeeper override on first launch). Automated in-Electron UI click-through was not captured in this session.

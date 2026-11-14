@@ -1,0 +1,12 @@
+{
+  "ambient_calm_loop.wav": {
+    "license": "CC0-1.0 (public domain dedication)",
+    "source": "Original procedural synthesis by scripts/generate_assets.py; no third-party samples",
+    "artist": "AI Social Video Studio"
+  },
+  "ambient_upbeat_loop.wav": {
+    "license": "CC0-1.0 (public domain dedication)",
+    "source": "Original procedural synthesis by scripts/generate_assets.py; no third-party samples",
+    "artist": "AI Social Video Studio"
+  }
+}

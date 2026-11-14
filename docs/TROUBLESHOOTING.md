@@ -26,11 +26,18 @@
 - Timing-based subtitles are aligned to synthesized scene audio boundaries. For ASR-refined alignment, install and run Whisper.cpp on narration audio, then regenerate SRT.
 
 ## Frontend cannot reach API
-- Start backend on `:8000` and frontend dev server on `:5173` (Vite proxies `/api`). For production, build frontend and serve with a static host/proxy to backend.
-- CORS allows localhost origins in dev.
+- Start backend on `:8000` and frontend dev server on `:5173` (Vite proxies `/api`, `/health`, `/data`, `/media`). For production, build the frontend (`frontend/dist`) — the backend serves it with an SPA fallback.
+- CORS allows localhost/127.0.0.1 origins in dev.
+
+## Desktop app issues (packaged `.app`)
+- **macOS blocks the app (unsigned):** right-click the app → **Open** → **Open**, or **System Settings → Privacy & Security → Open Anyway**.
+- **“Local engine could not start”:** check `~/Library/Application Support/AI Social Video Studio/logs/backend.log`. Ensure the app bundle contains `Contents/Resources/runtime/{python,py-packages,backend,frontend-dist}`.
+- **Where are my projects?** `~/Library/Application Support/AI Social Video Studio/data/projects/`. Use the menu **Open Data Folder**. Reinstalling/updating the app does not delete user data.
+- **Bundled music not listed:** confirm `assets/music/*.wav` and `licenses.json` exist inside the app’s runtime and `/media/music/...` responds (dev: backend serves `/media`).
 
 ## Interrupted job / recovery
-- Job state and artifacts persist in SQLite/filesystem. Failed jobs do not delete prior assets. Re-run full generation or regenerate specific scenes; per-file outputs are overwritten safely.
+- Job state and artifacts persist in SQLite/filesystem. On backend startup, stale `running/queued` jobs are marked **interrupted** (artifacts preserved). Failed/interrupted/canceled jobs do not delete prior assets — re-run generation or re-render safely.
+- Use the job **Cancel** action to stop at the next safe stage boundary.
 
 ## Project not found after delete
-- Project DB row removed; filesystem artifacts may remain under `data/projects/<id>/` for safety. Remove manually if desired.
+- Project DB row removed; filesystem artifacts may remain under the project data folder for safety. Remove manually if desired.

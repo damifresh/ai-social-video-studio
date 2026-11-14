@@ -2,8 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
-body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; }
+:root {
+  color-scheme: dark;
+}
 
-.inp { @apply w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-600; }
-.btn { @apply px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm disabled:opacity-50; }
-.btn-primary { @apply px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm text-white disabled:opacity-50; }
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background:
+    radial-gradient(1000px 600px at 85% -10%, rgba(99, 102, 241, 0.14), transparent 60%),
+    radial-gradient(800px 500px at -10% 15%, rgba(217, 70, 239, 0.08), transparent 55%),
+    #070912;
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(129, 140, 248, 0.35);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.22);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@layer components {
+  .panel {
+    @apply rounded-2xl border border-white/[0.07] bg-slate-900/50 shadow-[0_1px_0_0_rgba(255,255,255,0.03)_inset,0_20px_60px_-30px_rgba(0,0,0,0.9)] backdrop-blur-sm;
+  }
+  .input {
+    @apply w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 outline-none transition focus:border-indigo-400/50 focus:ring-2 focus:ring-indigo-500/20;
+  }
+  .textarea {
+    @apply input min-h-[90px] resize-y leading-relaxed;
+  }
+  .select {
+    @apply input appearance-none pr-8;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+    background-size: 1rem;
+  }
+  .tab {
+    @apply rounded-xl px-3 py-1.5 text-[13px] font-medium text-slate-400 transition hover:bg-white/[0.05] hover:text-slate-200;
+  }
+  .tab-active {
+    @apply bg-white/[0.08] text-white shadow-inner shadow-white/5;
+  }
+  .kbd {
+    @apply rounded-md border border-white/10 bg-white/[0.04] px-1.5 py-0.5 font-mono text-[10px] text-slate-400;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.25s ease-out both;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+input[type='range'] {
+  accent-color: #818cf8;
+}

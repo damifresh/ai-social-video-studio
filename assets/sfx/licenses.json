@@ -1,0 +1,18 @@
+{
+  "whoosh_soft.wav": {
+    "license": "CC0-1.0 (public domain dedication)",
+    "source": "Original procedural synthesis by scripts/generate_assets.py"
+  },
+  "whoosh_down.wav": {
+    "license": "CC0-1.0 (public domain dedication)",
+    "source": "Original procedural synthesis by scripts/generate_assets.py"
+  },
+  "riser_short.wav": {
+    "license": "CC0-1.0 (public domain dedication)",
+    "source": "Original procedural synthesis by scripts/generate_assets.py"
+  },
+  "click_soft.wav": {
+    "license": "CC0-1.0 (public domain dedication)",
+    "source": "Original procedural synthesis by scripts/generate_assets.py"
+  }
+}

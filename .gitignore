@@ -22,6 +22,14 @@ data/projects/*/logs/*.log
 *.vtt
 !assets/**/*.mp3
 !assets/**/*.wav
+!assets/**/*.json
+
+# Build/download caches and packaged artifacts
+.cache/
+dist-desktop/
+desktop/node_modules/
+desktop/resources/
+desktop/build/
 
 # Models (large, downloaded separately)
 models/
@@ -62,3 +70,4 @@ backend/.venv/
 
 # uv/python caches
 **/__pycache__/
+frontend/tsconfig.tsbuildinfo
