@@ -1,0 +1,67 @@
+[
+  {
+    "id": "8f20fe6de9f9",
+    "created_at": "2026-11-14T18:25:14.662843+00:00",
+    "updated_at": "2026-11-14T18:25:14.785277+00:00",
+    "status": "completed",
+    "suite": "m2_stability_cancel",
+    "title": "Stability: cancel during generation",
+    "summary": {
+      "overall_status": "PASS",
+      "total": 1,
+      "pass": 1,
+      "warning": 0,
+      "fail": 0
+    }
+  },
+  {
+    "id": "579bf2c90636",
+    "created_at": "2026-11-14T18:20:33.085675+00:00",
+    "updated_at": "2026-11-14T18:21:01.261476+00:00",
+    "status": "completed",
+    "suite": "m2_hardware_benchmark_baseline",
+    "title": "Engine A Format Checks (9:16, 1:1)",
+    "summary": {
+      "overall_status": "PASS",
+      "total": 2,
+      "pass": 2,
+      "warning": 0,
+      "fail": 0,
+      "measurement_sources": {
+        "cpu": "psutil.cpu_percent",
+        "app_memory": "psutil process-tree RSS",
+        "system_memory": "psutil.virtual_memory",
+        "swap": "psutil.swap_memory",
+        "memory_pressure": "macOS memory_pressure (best-effort, system-wide)",
+        "disk": "shutil.disk_usage",
+        "gpu_metal": "not reliably available without privileged powermetrics (reported, not fabricated)"
+      },
+      "report_note": "Measured results only; unimplemented/unavailable tests recorded as NOT_RUN/NOT_IMPLEMENTED."
+    }
+  },
+  {
+    "id": "6a80bee33c89",
+    "created_at": "2026-11-14T18:13:16.057954+00:00",
+    "updated_at": "2026-11-14T18:19:46.589623+00:00",
+    "status": "completed",
+    "suite": "m2_hardware_benchmark_baseline",
+    "title": "Engine A Baseline (CLI quick)",
+    "summary": {
+      "overall_status": "PASS",
+      "total": 1,
+      "pass": 1,
+      "warning": 0,
+      "fail": 0,
+      "measurement_sources": {
+        "cpu": "psutil.cpu_percent",
+        "app_memory": "psutil process-tree RSS",
+        "system_memory": "psutil.virtual_memory",
+        "swap": "psutil.swap_memory",
+        "memory_pressure": "macOS memory_pressure (best-effort, system-wide)",
+        "disk": "shutil.disk_usage",
+        "gpu_metal": "not reliably available without privileged powermetrics (reported, not fabricated)"
+      },
+      "report_note": "Measured results only; unimplemented/unavailable tests recorded as NOT_RUN/NOT_IMPLEMENTED."
+    }
+  }
+]

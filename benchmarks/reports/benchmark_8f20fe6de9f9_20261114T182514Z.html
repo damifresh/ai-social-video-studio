@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Benchmark Report 8f20fe6de9f9</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#020617;color:#e2e8f0;margin:0;padding:24px;line-height:1.5}
+.card{background:#0b1220;border:1px solid #1e293b;border-radius:12px;padding:16px;margin:14px 0}
+h1,h2,h3{margin:0 0 10px 0} h1{font-size:24px} h2{font-size:18px;color:#93c5fd} h3{font-size:15px;color:#cbd5e1}
+.muted{color:#94a3b8} .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.kv{background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:10px} .k{font-size:11px;color:#94a3b8;text-transform:uppercase} .v{font-size:14px;margin-top:2px}
+</style></head><body>
+<h1>M2 Hardware Benchmark Report</h1>
+<div class="muted">Run ID: 8f20fe6de9f9 · Generated: 20261114T182514Z · Suite: m2_stability_cancel · Status: <span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#475569;color:#fff;font-size:12px;font-weight:600">completed</span></div>
+
+<div class="card"><h2>1. Hardware Configuration</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;processor&quot;: &quot;Apple M2&quot;,
+  &quot;machine&quot;: &quot;arm64&quot;,
+  &quot;cpu_logical&quot;: 8,
+  &quot;memory_bytes&quot;: 8589934592,
+  &quot;memory_gb&quot;: 8.0
+}</pre></div>
+<div class="card"><h2>2. Software and Model Versions</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;app_version&quot;: &quot;1.0.0&quot;,
+  &quot;python&quot;: &quot;3.11.18&quot;,
+  &quot;platform&quot;: &quot;macOS-27.0.1-arm64-arm-64bit&quot;,
+  &quot;macos_version&quot;: &quot;27.0.1&quot;,
+  &quot;sw_vers&quot;: &quot;ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434&quot;,
+  &quot;ffmpeg_path&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/backend/.venv/lib/python3.11/site-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1&quot;,
+  &quot;ffprobe_path&quot;: &quot;ffprobe&quot;,
+  &quot;ffmpeg_version&quot;: &quot;ffmpeg version 7.1 Copyright (c) 2000-2024 the FFmpeg developers&quot;,
+  &quot;ffprobe_version&quot;: &quot;&quot;,
+  &quot;imageio_ffmpeg&quot;: &quot;0.6.0&quot;,
+  &quot;engines&quot;: {
+    &quot;say&quot;: true,
+    &quot;kokoro&quot;: false,
+    &quot;kokoro_hint&quot;: &quot;Install kokoro-mlx or mlx-audio in a Python 3.10-3.12 environment&quot;,
+    &quot;whisper&quot;: false,
+    &quot;whisper_bin&quot;: null,
+    &quot;whisper_model&quot;: null,
+    &quot;ffmpeg&quot;: &quot;ffmpeg-macos-aarch64-v7.1&quot;,
+    &quot;diffusion_video&quot;: false
+  },
+  &quot;git&quot;: {
+    &quot;commit&quot;: &quot;26d60b268a34f2a369a9742c475f8d64a1dde217&quot;,
+    &quot;short&quot;: &quot;26d60b2&quot;,
+    &quot;date&quot;: &quot;2026-11-14T17:35:04+01:00&quot;,
+    &quot;dirty&quot;: true
+  }
+}</pre><h3>Config / Models / FFmpeg / Acceleration</h3><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;config&quot;: {
+    &quot;sequential_jobs&quot;: true,
+    &quot;target_resolution&quot;: &quot;720p&quot;,
+    &quot;data_dir&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data&quot;,
+    &quot;models_dir&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/models&quot;,
+    &quot;assets_dir&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/assets&quot;,
+    &quot;ffmpeg&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/backend/.venv/lib/python3.11/site-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1&quot;
+  },
+  &quot;disk_at_capture&quot;: {
+    &quot;total_gb&quot;: 460.43,
+    &quot;free_gb&quot;: 147.73,
+    &quot;used_gb&quot;: 312.7
+  }
+}</pre></div>
+<div class="card"><h2>3. Test Methodology</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;approach&quot;: &quot;Start real Engine A pipeline, set job.canceled=True after ~2.5s, observe terminal status and sampled metrics.&quot;,
+  &quot;sampling_interval_sec&quot;: 0.5,
+  &quot;metrics_sources&quot;: {
+    &quot;cpu&quot;: &quot;psutil.cpu_percent&quot;,
+    &quot;app_memory&quot;: &quot;psutil RSS&quot;,
+    &quot;system_memory&quot;: &quot;psutil.virtual_memory&quot;,
+    &quot;swap&quot;: &quot;psutil.swap_memory&quot;,
+    &quot;memory_pressure&quot;: &quot;macOS memory_pressure&quot;
+  }
+}</pre></div>
+<div class="card"><h2>Summary</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;overall_status&quot;: &quot;PASS&quot;,
+  &quot;total&quot;: 1,
+  &quot;pass&quot;: 1,
+  &quot;warning&quot;: 0,
+  &quot;fail&quot;: 0
+}</pre></div>
+<div class="card"><h2>4-8. Results (AI Auto-Clip, Transcription, Highlight, Export, AI Video Creator)</h2>
+<table style='width:100%;border-collapse:collapse;font-size:13px'><thead><tr><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Test ID</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Engine</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Name</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Status</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Time (s)</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Peak App RSS (MB)</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Notes</th></tr></thead><tbody><tr><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>STAB-CANCEL</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>AI_VIDEO_CREATOR</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>Cancel job during generation (measured)</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'><span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#16a34a;color:#fff;font-size:12px;font-weight:600">PASS</span></td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'></td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>91.8</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>Cancellation requested during run; job ended as canceled with no crash observed.</td></tr></tbody></table>
+<h3>AI Auto-Clip Results</h3><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;status&quot;: &quot;NOT_IMPLEMENTED&quot;,
+  &quot;reason&quot;: &quot;Engine B not implemented.&quot;,
+  &quot;tests&quot;: [
+    {
+      &quot;id&quot;: &quot;A1&quot;,
+      &quot;duration&quot;: &quot;1 min&quot;,
+      &quot;status&quot;: &quot;NOT_RUN&quot;
+    },
+    {
+      &quot;id&quot;: &quot;A2&quot;,
+      &quot;duration&quot;: &quot;5 min&quot;,
+      &quot;status&quot;: &quot;NOT_RUN&quot;
+    },
+    {
+      &quot;id&quot;: &quot;A3&quot;,
+      &quot;duration&quot;: &quot;15 min&quot;,
+      &quot;status&quot;: &quot;NOT_RUN&quot;
+    },
+    {
+      &quot;id&quot;: &quot;A4&quot;,
+      &quot;duration&quot;: &quot;30 min&quot;,
+      &quot;status&quot;: &quot;NOT_RUN&quot;
+    },
+    {
+      &quot;id&quot;: &quot;A5&quot;,
+      &quot;duration&quot;: &quot;60 min&quot;,
+      &quot;status&quot;: &quot;NOT_RUN&quot;
+    }
+  ]
+}</pre>
+<h3>Transcription Accuracy</h3><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;status&quot;: &quot;NOT_RUN&quot;,
+  &quot;reason&quot;: &quot;Whisper.cpp/models/ground-truth transcripts not available; WER not measured.&quot;
+}</pre>
+<h3>Highlight Quality</h3><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;status&quot;: &quot;NOT_RUN&quot;,
+  &quot;reason&quot;: &quot;No highlight engine/reference set/human ratings.&quot;
+}</pre>
+<h3>Export Quality</h3><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;status&quot;: &quot;NOT_APPLICABLE&quot;,
+  &quot;note&quot;: &quot;Cancel/stability test; no final export required.&quot;
+}</pre>
+<h3>AI Video Creator Results</h3><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;tests&quot;: [
+    {
+      &quot;id&quot;: &quot;STAB-CANCEL&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;wall_time_sec&quot;: 3.7,
+      &quot;job_status&quot;: &quot;canceled&quot;,
+      &quot;notes&quot;: &quot;Cancellation requested during run; job ended as canceled with no crash observed.&quot;
+    }
+  ]
+}</pre>
+</div>
+<div class="card"><h2>9. Memory Performance</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;peak_app_rss_mb&quot;: 91.8,
+  &quot;sample_summary&quot;: {
+    &quot;samples&quot;: 9,
+    &quot;interval_sec&quot;: 0.5,
+    &quot;cpu_percent_avg&quot;: 21.59,
+    &quot;cpu_percent_peak&quot;: 42.3,
+    &quot;app_rss_mb_avg&quot;: 79.71,
+    &quot;app_rss_mb_peak&quot;: 91.8,
+    &quot;system_memory_percent_avg&quot;: 83.29,
+    &quot;system_memory_percent_peak&quot;: 83.8,
+    &quot;system_memory_used_mb_peak&quot;: 6866.0,
+    &quot;system_available_mb_min&quot;: 1326.0,
+    &quot;swap_used_mb_peak&quot;: 4245.6,
+    &quot;disk_free_gb_min&quot;: 147.73,
+    &quot;memory_pressure_levels_seen&quot;: [
+      &quot;normal&quot;
+    ],
+    &quot;sources&quot;: {
+      &quot;app_memory&quot;: &quot;psutil RSS process tree&quot;,
+      &quot;system_memory&quot;: &quot;psutil.virtual_memory&quot;,
+      &quot;swap&quot;: &quot;psutil.swap_memory&quot;,
+      &quot;cpu&quot;: &quot;psutil.cpu_percent&quot;,
+      &quot;memory_pressure&quot;: &quot;macOS memory_pressure (best-effort)&quot;,
+      &quot;gpu&quot;: &quot;not reliably available without privileged powermetrics&quot;,
+      &quot;disk&quot;: &quot;shutil.disk_usage&quot;
+    }
+  }
+}</pre></div>
+<div class="card"><h2>10. Stability Results</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;test&quot;: &quot;cancel_during_generation&quot;,
+  &quot;job_status&quot;: &quot;canceled&quot;,
+  &quot;crashes_observed&quot;: 0,
+  &quot;notes&quot;: &quot;Cancellation requested during run; job ended as canceled with no crash observed.&quot;
+}</pre></div>
+<div class="card"><h2>11. Bottleneck Analysis</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>[
+  {
+    &quot;area&quot;: &quot;cancel checkpoints&quot;,
+    &quot;evidence&quot;: &quot;Pipeline checks cancellation at stage boundaries; very fast runs may finish before a checkpoint observes cancel.&quot;
+  }
+]</pre></div>
+<div class="card"><h2>12. Optimization Recommendations</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>[
+  {
+    &quot;config&quot;: &quot;Add more frequent cancel checks in long loops/FFmpeg waits&quot;,
+    &quot;rationale&quot;: &quot;Improves cancellation responsiveness.&quot;
+  }
+]</pre></div>
+<div class="card"><h2>13. Failed Tests</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>[]</pre></div>
+<div class="card"><h2>14. Known Limitations</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>[
+  &quot;Cancel timing depends on stage checkpoints; fast runs may complete before cancel is exercised.&quot;,
+  &quot;Engine B/transcription accuracy/highlight quality not implemented/measured.&quot;
+]</pre></div>
+<div class="card"><h2>15. Final Hardware Capability Assessment</h2>
+<table style='width:100%;border-collapse:collapse;font-size:13px'><thead><tr><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Engine</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Workload</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Classification</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Notes</th></tr></thead><tbody><tr><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>AI_VIDEO_CREATOR</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>Job cancellation during generation (basic)</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'><span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#0891b2;color:#fff;font-size:12px;font-weight:600">SUPPORTED_WITH_OPTIMIZATION</span></td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>Cancellation requested during run; job ended as canceled with no crash observed.</td></tr></tbody></table>
+<pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;stability&quot;: &quot;Cancellation requested during run; job ended as canceled with no crash observed.&quot;
+}</pre>
+</div>
+<div class="card"><h2>Measurement Sources & Raw Samples (excerpt)</h2><p class="muted">Full run JSON contains all samples, logs references and test identifiers.</p><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;measurement_sources&quot;: null,
+  &quot;sample_count&quot;: 0
+}</pre></div>
+</body></html>

@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .api.projects import router as projects_router
 from .api.system import router as system_router
+from .benchmark.api import router as benchmark_router
 from .core.config import APP_NAME, APP_VERSION, FRONTEND_DIST, PROJECTS_DIR, detect_engines, settings
 from .db.database import ensure_schema, recover_interrupted_jobs
 from .services.memory import system_snapshot
@@ -42,6 +43,7 @@ app.add_middleware(
 
 app.include_router(projects_router)
 app.include_router(system_router)
+app.include_router(benchmark_router)
 
 
 @app.get("/health")

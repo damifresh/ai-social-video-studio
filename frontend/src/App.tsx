@@ -5,6 +5,7 @@ import NewProject from './pages/NewProject';
 import ProjectView from './pages/ProjectView';
 import Library from './pages/Library';
 import Exports from './pages/Exports';
+import Benchmark from './pages/Benchmark';
 import Settings from './pages/Settings';
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/project/:id" element={<ProjectView />} />
         <Route path="/library" element={<Library />} />
         <Route path="/exports" element={<Exports />} />
+        <Route path="/benchmark" element={<Benchmark />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

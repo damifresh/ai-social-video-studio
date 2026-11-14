@@ -55,13 +55,26 @@
 - `docs/screenshots/01-dashboard-full.png`
 - `dist-desktop/AI Social Video Studio.app`, `.zip`, `.dmg`
 
+## M2 Hardware Benchmark (measured, 2026-11-14)
+
+Dedicated benchmark instrumentation and dashboard added (`backend/app/benchmark/*`, `/api/benchmark/*`, `frontend/src/pages/Benchmark.tsx`, `scripts/benchmark_suite.py`). Reports: `benchmarks/reports/*.json|.html`, run data `benchmarks/data/runs/*.json`. Full details: `docs/M2_HARDWARE_BENCHMARK.md`.
+
+| Run | Case(s) | Status | Key measured results |
+|---|---|---|---|
+| `6a80bee33c89` (corrected) | VC-60S 16:9, 30 fps | **PASS** | wall 16.464 s, output 69.49 s, ratio 0.237, peak app RSS 708.2 MB, CPU avg/peak 42.2/92.9%, sys mem peak 83.4%, swap peak 4073.9 MB, export 1280×720 4.58 MB H.264/AAC valid (ffmpeg-fallback probe; no standalone ffprobe) |
+| `579bf2c90636` | VC-60S-9x16, VC-60S-1x1 | **PASS** | 9:16: 15.366 s, 67.43 s, peak 743.3 MB, 720×1280 valid. 1:1: 12.543 s, 65.96 s, peak 460.1 MB, 720×720 valid |
+| `8f20fe6de9f9` | STAB-CANCEL | **PASS** | cancel requested ~2.5 s into real run → `job_status=canceled`, wall 3.7 s, peak 91.8 MB, no crash |
+
+**Engine B (AI Auto-Clip Studio):** NOT_IMPLEMENTED (A1–A5, transcription WER/alignment, highlight quality/human ratings all NOT_RUN — no fabricated data). **GPU/Metal utilization:** not reliably sampled without privileged `powermetrics` (reported unavailable). **Max RSS (`/usr/bin/time -l`):** not captured (sampled process-tree RSS peaks used).
+
 ## Known gaps / limitations (honest)
 
 - **Kokoro MLX / Whisper.cpp** not installed or runtime-verified; macOS `say` + timing subtitles are the proven local path.
 - **Diffusion/generated footage** not enabled on 8 GB; visuals are animated graphics (labeled), not AI-generated video frames.
 - **Narration-driven duration:** output can exceed the nominal minute target (measured ~174 wpm). 5-min target produced 329 s.
-- **Memory metric:** sampled process peak RSS reported by jobs, not `/usr/bin/time -l` high-water mark.
+- **Memory metric:** sampled process peak RSS reported by jobs/benchmarks, not `/usr/bin/time -l` high-water mark.
 - **UI automation:** no automated click-through in a live browser/Electron session; API/pipeline, packaged health, and renders verified.
 - **App signing/notarization:** unsigned build (`identity: null`) — Gatekeeper override needed on first open.
 - **Auto-resume:** interrupted jobs are recoverable/re-runnable but not automatically resumed from the exact failed stage. Scene-regeneration recompose is implemented but not separately frame-diff validated in this report.
+- **Benchmark scope:** Engine B, Whisper WER/ground-truth, highlight reference/human evaluation, comparative optimization matrix (A–G), and extended stress matrix (5x1-min, 3x5-min, restart/reopen/after-fail timed runs) not fully executed — reported as NOT_IMPLEMENTED/NOT_RUN in benchmark docs/reports. Initial baseline run had a validation bug (missing `ffprobe` binary) corrected with ffmpeg-fallback probing and regenerated report.
 

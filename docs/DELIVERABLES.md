@@ -36,9 +36,19 @@ Dev DB: `data/studio.db`; project folders under `data/projects/<id>/` (script/sc
 - `docs/HARDWARE_LIMITATIONS.md` — 8 GB constraints and optimizations
 - `docs/TROUBLESHOOTING.md` — common issues and recovery
 - `docs/TEST_REPORT.md` — acceptance matrix, measurements, packaged-app evidence, honest gaps
+- `docs/M2_HARDWARE_BENCHMARK.md` — M2 8 GB benchmark suite methodology, measured Engine A results, reports, and honest NOT_IMPLEMENTED/NOT_RUN gaps (Engine B, WER, highlight quality)
 - `models/README.md` — optional model downloads/licensing notes
 
-## 6. Honest capability notes
+## 6. Benchmark subsystem & measured evidence (2026-11-14)
+- **M2 HARDWARE BENCHMARK dashboard & instrumentation:** backend `app/benchmark/{env,metrics,ffprobe_check,store,runner,report,api}.py`, API `/api/benchmark/*`, frontend page `/benchmark` ("M2 HARDWARE BENCHMARK"), CLI `scripts/benchmark_suite.py`.
+- **Measured runs (real, local):**
+  - `6a80bee33c89` Engine A baseline VC-60S 16:9 — **PASS** (revalidated): 16.464 s wall, 69.49 s output, ratio 0.237, peak app RSS 708.2 MB, 1280×720 H.264/AAC 4.58 MB valid.
+  - `579bf2c90636` format checks — **PASS**: 9:16 720×1280 (15.366 s, peak 743.3 MB) and 1:1 720×720 (12.543 s, peak 460.1 MB), exports valid.
+  - `8f20fe6de9f9` cancel-during-generation — **PASS**: canceled, 3.7 s, peak 91.8 MB, no crash.
+- **Reports:** `benchmarks/reports/*.json|.html` and `benchmarks/data/runs/*.json` (measured; initial baseline had ffprobe-binary validation bug corrected via ffmpeg-fallback probe).
+- **Not implemented/measured (honest):** Engine B (AI Auto-Clip Studio) absent (A1–A5, highlight pipeline NOT_RUN); Whisper.cpp/models and ground-truth transcripts unavailable (WER/alignment NOT_RUN); no human highlight reference/ratings; GPU/Metal utilization not reliably sampled (privileged powermetrics unavailable); comparative optimization matrix and extended stress matrix not fully executed.
+
+## 7. Honest capability notes
 - **Local/offline, no paid APIs:** yes (macOS `say`, FFmpeg, Pillow, deterministic script, loopback-only backend). Internet not required for generation.
 - **Kokoro/Whisper.cpp:** adapters and fallbacks implemented; **not installed/verified** in this build. Timing-based subtitles and macOS `say` are the proven path.
 - **Diffusion video:** not enabled on 8 GB; visuals are **animated graphics/stills** (labeled), not AI-generated footage.

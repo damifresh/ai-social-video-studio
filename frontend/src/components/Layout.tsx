@@ -7,6 +7,7 @@ const NAV = [
   { to: '/new', label: 'New Project', icon: 'M12 5v14M5 12h14' },
   { to: '/library', label: 'Asset Library', icon: 'M4 5h16v14H4zM4 9h16M9 5v14' },
   { to: '/exports', label: 'Export Center', icon: 'M12 3v12m0 0l-4-4m4 4l4-4M4 21h16' },
+  { to: '/benchmark', label: 'M2 Benchmark', icon: 'M4 19h16M7 16V9m5 7V5m5 11v-4' },
   { to: '/settings', label: 'Settings', icon: 'M12 15a3 3 0 100-6 3 3 0 000 6zM19 12a7 7 0 00-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 00-1.7-1L14.5 3h-4l-.4 2.1a7 7 0 00-1.7 1l-2.3-1-2 3.4L6 10a7 7 0 000 2l-2 1.5 2 3.4 2.3-1a7 7 0 001.7 1l.4 2.1h4l.4-2.1a7 7 0 001.7-1l2.3 1 2-3.4L19 13a7 7 0 000-1z' },
 ];
 

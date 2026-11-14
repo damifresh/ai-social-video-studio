@@ -184,6 +184,12 @@ export const api = {
   library: (kind?: string) => req<{ items: any[]; bundled: any[]; count: number }>(`/api/library${kind ? `?kind=${encodeURIComponent(kind)}` : ''}`),
   exports: () => req<{ exports: any[] }>('/api/exports'),
 
+  benchmarkEnv: () => req<any>('/api/benchmark/environment'),
+  benchmarkSample: () => req<any>('/api/benchmark/sample'),
+  benchmarkRuns: () => req<any>('/api/benchmark/runs'),
+  benchmarkRun: (id: string) => req<any>(`/api/benchmark/runs/${id}`),
+  benchmarkStartBaseline: (body?: any) => req<any>('/api/benchmark/run/baseline', { method: 'POST', body: JSON.stringify(body || {}) }),
+
   fileUrl: (pid: string, kind: string) => `/api/projects/${pid}/files/${kind}`,
   assetUrl: (pid: string, rel: string) => `/api/projects/${pid}/asset/${rel}`,
   thumbUrl: (pid: string, cacheKey?: string) => `/api/projects/${pid}/files/thumbnail${cacheKey ? `?v=${cacheKey}` : ''}`,

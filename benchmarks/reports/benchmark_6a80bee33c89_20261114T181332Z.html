@@ -1,0 +1,1509 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Benchmark Report 6a80bee33c89</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#020617;color:#e2e8f0;margin:0;padding:24px;line-height:1.5}
+.card{background:#0b1220;border:1px solid #1e293b;border-radius:12px;padding:16px;margin:14px 0}
+h1,h2,h3{margin:0 0 10px 0} h1{font-size:24px} h2{font-size:18px;color:#93c5fd} h3{font-size:15px;color:#cbd5e1}
+.muted{color:#94a3b8} .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.kv{background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:10px} .k{font-size:11px;color:#94a3b8;text-transform:uppercase} .v{font-size:14px;margin-top:2px}
+</style></head><body>
+<h1>M2 Hardware Benchmark Report</h1>
+<div class="muted">Run ID: 6a80bee33c89 · Generated: 20261114T181332Z · Suite: m2_hardware_benchmark_baseline · Status: <span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#475569;color:#fff;font-size:12px;font-weight:600">completed</span></div>
+
+<div class="card"><h2>1. Hardware Configuration</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;processor&quot;: &quot;Apple M2&quot;,
+  &quot;machine&quot;: &quot;arm64&quot;,
+  &quot;cpu_logical&quot;: 8,
+  &quot;memory_bytes&quot;: 8589934592,
+  &quot;memory_gb&quot;: 8.0
+}</pre></div>
+<div class="card"><h2>2. Software and Model Versions</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;app_version&quot;: &quot;1.0.0&quot;,
+  &quot;python&quot;: &quot;3.11.18&quot;,
+  &quot;platform&quot;: &quot;macOS-27.0.1-arm64-arm-64bit&quot;,
+  &quot;macos_version&quot;: &quot;27.0.1&quot;,
+  &quot;sw_vers&quot;: &quot;ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434&quot;,
+  &quot;ffmpeg_path&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/backend/.venv/lib/python3.11/site-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1&quot;,
+  &quot;ffprobe_path&quot;: &quot;ffprobe&quot;,
+  &quot;ffmpeg_version&quot;: &quot;ffmpeg version 7.1 Copyright (c) 2000-2024 the FFmpeg developers&quot;,
+  &quot;ffprobe_version&quot;: &quot;&quot;,
+  &quot;imageio_ffmpeg&quot;: &quot;0.6.0&quot;,
+  &quot;engines&quot;: {
+    &quot;say&quot;: true,
+    &quot;kokoro&quot;: false,
+    &quot;kokoro_hint&quot;: &quot;Install kokoro-mlx or mlx-audio in a Python 3.10-3.12 environment&quot;,
+    &quot;whisper&quot;: false,
+    &quot;whisper_bin&quot;: null,
+    &quot;whisper_model&quot;: null,
+    &quot;ffmpeg&quot;: &quot;ffmpeg-macos-aarch64-v7.1&quot;,
+    &quot;diffusion_video&quot;: false
+  },
+  &quot;git&quot;: {
+    &quot;commit&quot;: &quot;26d60b268a34f2a369a9742c475f8d64a1dde217&quot;,
+    &quot;short&quot;: &quot;26d60b2&quot;,
+    &quot;date&quot;: &quot;2026-11-14T17:35:04+01:00&quot;,
+    &quot;dirty&quot;: true
+  }
+}</pre><h3>Config / Models / FFmpeg / Acceleration</h3><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;config&quot;: {
+    &quot;sequential_jobs&quot;: true,
+    &quot;target_resolution&quot;: &quot;720p&quot;,
+    &quot;data_dir&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data&quot;,
+    &quot;models_dir&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/models&quot;,
+    &quot;assets_dir&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/assets&quot;,
+    &quot;ffmpeg&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/backend/.venv/lib/python3.11/site-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1&quot;
+  },
+  &quot;disk_at_capture&quot;: {
+    &quot;total_gb&quot;: 460.43,
+    &quot;free_gb&quot;: 147.84,
+    &quot;used_gb&quot;: 312.59
+  }
+}</pre></div>
+<div class="card"><h2>3. Test Methodology</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;approach&quot;: &quot;Run actual Engine A (AI Video Creator) generation jobs sequentially via the existing pipeline, sample host/app metrics during execution, and validate exports with ffprobe.&quot;,
+  &quot;sampling_interval_sec_default&quot;: 1.0,
+  &quot;metrics_sources&quot;: {
+    &quot;cpu&quot;: &quot;psutil.cpu_percent&quot;,
+    &quot;app_memory&quot;: &quot;psutil process-tree RSS&quot;,
+    &quot;system_memory&quot;: &quot;psutil.virtual_memory&quot;,
+    &quot;swap&quot;: &quot;psutil.swap_memory&quot;,
+    &quot;memory_pressure&quot;: &quot;macOS memory_pressure (best-effort, system-wide)&quot;,
+    &quot;disk&quot;: &quot;shutil.disk_usage&quot;,
+    &quot;gpu_metal&quot;: &quot;not reliably available without privileged powermetrics (reported, not fabricated)&quot;
+  },
+  &quot;repeatability&quot;: &quot;Fixed per-case config recorded in each test; background workload not strictly isolated.&quot;,
+  &quot;engines_in_scope&quot;: [
+    &quot;AI_VIDEO_CREATOR&quot;
+  ],
+  &quot;engines_out_of_scope&quot;: [
+    &quot;AI_AUTO_CLIP_STUDIO (not implemented)&quot;
+  ]
+}</pre></div>
+<div class="card"><h2>Summary</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;overall_status&quot;: &quot;FAIL&quot;,
+  &quot;total&quot;: 1,
+  &quot;pass&quot;: 0,
+  &quot;warning&quot;: 0,
+  &quot;fail&quot;: 1,
+  &quot;measurement_sources&quot;: {
+    &quot;cpu&quot;: &quot;psutil.cpu_percent&quot;,
+    &quot;app_memory&quot;: &quot;psutil process-tree RSS&quot;,
+    &quot;system_memory&quot;: &quot;psutil.virtual_memory&quot;,
+    &quot;swap&quot;: &quot;psutil.swap_memory&quot;,
+    &quot;memory_pressure&quot;: &quot;macOS memory_pressure (best-effort, system-wide)&quot;,
+    &quot;disk&quot;: &quot;shutil.disk_usage&quot;,
+    &quot;gpu_metal&quot;: &quot;not reliably available without privileged powermetrics (reported, not fabricated)&quot;
+  },
+  &quot;report_note&quot;: &quot;Measured results only; unimplemented/unavailable tests recorded as NOT_RUN/NOT_IMPLEMENTED.&quot;
+}</pre></div>
+<div class="card"><h2>4-8. Results (AI Auto-Clip, Transcription, Highlight, Export, AI Video Creator)</h2>
+<table style='width:100%;border-collapse:collapse;font-size:13px'><thead><tr><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Test ID</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Engine</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Name</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Status</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Time (s)</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Peak App RSS (MB)</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Notes</th></tr></thead><tbody><tr><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>VC-60S</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>AI_VIDEO_CREATOR</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>Video Creator 60s target 16:9</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'><span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#dc2626;color:#fff;font-size:12px;font-weight:600">FAIL</span></td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'></td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>708.2</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>See job/export details.</td></tr></tbody></table>
+<h3>AI Auto-Clip Results</h3><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;status&quot;: &quot;NOT_IMPLEMENTED&quot;,
+  &quot;reason&quot;: &quot;Engine B (AI Auto-Clip Studio) is not present in this codebase (no import/upload, proxy, transcription pipeline, highlight extraction, clip render/subtitle workflow, or UI/API).&quot;,
+  &quot;tests&quot;: [
+    {
+      &quot;id&quot;: &quot;A1&quot;,
+      &quot;duration&quot;: &quot;1 min&quot;,
+      &quot;status&quot;: &quot;NOT_RUN&quot;,
+      &quot;reason&quot;: &quot;Not implemented in this application build; no fabricated measurements.&quot;
+    },
+    {
+      &quot;id&quot;: &quot;A2&quot;,
+      &quot;duration&quot;: &quot;5 min&quot;,
+      &quot;status&quot;: &quot;NOT_RUN&quot;,
+      &quot;reason&quot;: &quot;Not implemented in this application build; no fabricated measurements.&quot;
+    },
+    {
+      &quot;id&quot;: &quot;A3&quot;,
+      &quot;duration&quot;: &quot;15 min&quot;,
+      &quot;status&quot;: &quot;NOT_RUN&quot;,
+      &quot;reason&quot;: &quot;Not implemented in this application build; no fabricated measurements.&quot;
+    },
+    {
+      &quot;id&quot;: &quot;A4&quot;,
+      &quot;duration&quot;: &quot;30 min&quot;,
+      &quot;status&quot;: &quot;NOT_RUN&quot;,
+      &quot;reason&quot;: &quot;Not implemented in this application build; no fabricated measurements.&quot;
+    },
+    {
+      &quot;id&quot;: &quot;A5&quot;,
+      &quot;duration&quot;: &quot;60 min&quot;,
+      &quot;status&quot;: &quot;NOT_RUN&quot;,
+      &quot;reason&quot;: &quot;Not implemented in this application build; no fabricated measurements.&quot;
+    }
+  ]
+}</pre>
+<h3>Transcription Accuracy</h3><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;status&quot;: &quot;NOT_RUN&quot;,
+  &quot;reason&quot;: &quot;Whisper.cpp Tiny/Base binaries/models and manually verified ground-truth transcripts/reference audio-video datasets are not installed/provided in this environment; WER and alignment accuracy cannot be honestly computed.&quot;,
+  &quot;models_tested&quot;: []
+}</pre>
+<h3>Highlight Quality</h3><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;status&quot;: &quot;NOT_RUN&quot;,
+  &quot;reason&quot;: &quot;No AI highlight extraction engine, no human-reviewed reference highlight set, and no human reviewer ratings collected; precision/recall/quality scores cannot be fabricated.&quot;
+}</pre>
+<h3>Export Quality</h3><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;engine_a&quot;: {
+    &quot;status&quot;: &quot;WARNING&quot;,
+    &quot;validations&quot;: [
+      {
+        &quot;ok&quot;: false,
+        &quot;checks&quot;: [
+          {
+            &quot;name&quot;: &quot;file_exists&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: null
+          },
+          {
+            &quot;name&quot;: &quot;probe_valid_container&quot;,
+            &quot;ok&quot;: false,
+            &quot;detail&quot;: null
+          },
+          {
+            &quot;name&quot;: &quot;has_video_stream&quot;,
+            &quot;ok&quot;: false,
+            &quot;detail&quot;: null
+          },
+          {
+            &quot;name&quot;: &quot;has_audio_stream&quot;,
+            &quot;ok&quot;: false,
+            &quot;detail&quot;: null
+          },
+          {
+            &quot;name&quot;: &quot;video_codec_h264&quot;,
+            &quot;ok&quot;: false,
+            &quot;detail&quot;: null
+          },
+          {
+            &quot;name&quot;: &quot;audio_codec_aac&quot;,
+            &quot;ok&quot;: false,
+            &quot;detail&quot;: null
+          },
+          {
+            &quot;name&quot;: &quot;resolution_720p_target&quot;,
+            &quot;ok&quot;: false,
+            &quot;detail&quot;: {
+              &quot;width&quot;: null,
+              &quot;height&quot;: null,
+              &quot;target&quot;: 720
+            }
+          },
+          {
+            &quot;name&quot;: &quot;duration_positive&quot;,
+            &quot;ok&quot;: false,
+            &quot;detail&quot;: null
+          },
+          {
+            &quot;name&quot;: &quot;file_size_positive&quot;,
+            &quot;ok&quot;: false,
+            &quot;detail&quot;: null
+          },
+          {
+            &quot;name&quot;: &quot;valid_mp4_container&quot;,
+            &quot;ok&quot;: false,
+            &quot;detail&quot;: null
+          }
+        ],
+        &quot;probe&quot;: {
+          &quot;exists&quot;: true,
+          &quot;path&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/c29db707-4abf-4a1f-92b6-9e17442a6975/renders/final_16x9_720p.mp4&quot;,
+          &quot;valid&quot;: false,
+          &quot;error&quot;: &quot;[Errno 2] No such file or directory: &#x27;ffprobe&#x27;&quot;
+        }
+      }
+    ]
+  },
+  &quot;engine_b&quot;: {
+    &quot;status&quot;: &quot;NOT_RUN&quot;,
+    &quot;reason&quot;: &quot;AI Auto-Clip Studio not implemented.&quot;
+  }
+}</pre>
+<h3>AI Video Creator Results</h3><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;status&quot;: &quot;FAIL&quot;,
+  &quot;tests&quot;: [
+    {
+      &quot;id&quot;: &quot;VC-60S&quot;,
+      &quot;name&quot;: &quot;Video Creator 60s target 16:9&quot;,
+      &quot;status&quot;: &quot;FAIL&quot;,
+      &quot;wall_time_sec&quot;: 16.464,
+      &quot;output_duration_sec&quot;: 69.49,
+      &quot;processing_speed_ratio&quot;: 0.2369,
+      &quot;peak_app_rss_mb&quot;: 708.2,
+      &quot;swap_used_mb_peak&quot;: 4073.9,
+      &quot;export_size_bytes&quot;: 4801279,
+      &quot;notes&quot;: &quot;See job/export details.&quot;
+    }
+  ]
+}</pre>
+</div>
+<div class="card"><h2>9. Memory Performance</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;peak_app_rss_mb_across_tests&quot;: 708.2,
+  &quot;peak_swap_used_mb_across_tests&quot;: 4073.9,
+  &quot;per_test&quot;: [
+    {
+      &quot;id&quot;: &quot;VC-60S&quot;,
+      &quot;peak_app_rss_mb&quot;: 708.2,
+      &quot;system_memory_percent_peak&quot;: 83.4,
+      &quot;swap_used_mb_peak&quot;: 4073.9,
+      &quot;memory_pressure_levels_seen&quot;: [
+        &quot;normal&quot;
+      ]
+    }
+  ],
+  &quot;note&quot;: &quot;App memory is process-tree RSS; system memory/swap are host-wide snapshots (not app-only).&quot;
+}</pre></div>
+<div class="card"><h2>10. Stability Results</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;status&quot;: &quot;FAIL&quot;,
+  &quot;completed_jobs&quot;: 1,
+  &quot;crashes_observed&quot;: 0,
+  &quot;failed_jobs&quot;: 0,
+  &quot;note&quot;: &quot;Baseline covers sequential Engine A runs. Repeated/cancel/restart/recovery stress matrix requires additional explicit test execution.&quot;
+}</pre></div>
+<div class="card"><h2>11. Bottleneck Analysis</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>[
+  {
+    &quot;area&quot;: &quot;Narration-driven duration&quot;,
+    &quot;evidence&quot;: &quot;Output duration follows synthesized speech rate; 1-min targets can overshoot, affecting processing ratio.&quot;
+  }
+]</pre></div>
+<div class="card"><h2>12. Optimization Recommendations</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>[
+  {
+    &quot;config&quot;: &quot;Keep sequential job execution&quot;,
+    &quot;rationale&quot;: &quot;Measured memory peaks stayed within 8GB envelope; concurrency risks pressure.&quot;
+  },
+  {
+    &quot;config&quot;: &quot;Prefer shorter narration / tighter script for target duration&quot;,
+    &quot;rationale&quot;: &quot;Reduces TTS+render time and processing ratio.&quot;
+  },
+  {
+    &quot;config&quot;: &quot;Maintain disk-backed per-scene rendering&quot;,
+    &quot;rationale&quot;: &quot;Avoids in-memory timeline growth on long outputs.&quot;
+  },
+  {
+    &quot;config&quot;: &quot;Install/benchmark Whisper Tiny vs Base only with ground-truth data&quot;,
+    &quot;rationale&quot;: &quot;Cannot compare accuracy without reference transcripts.&quot;
+  }
+]</pre></div>
+<div class="card"><h2>13. Failed Tests</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>[
+  {
+    &quot;id&quot;: &quot;VC-60S&quot;,
+    &quot;engine&quot;: &quot;AI_VIDEO_CREATOR&quot;,
+    &quot;name&quot;: &quot;Video Creator 60s target 16:9&quot;,
+    &quot;status&quot;: &quot;FAIL&quot;,
+    &quot;config&quot;: {
+      &quot;id&quot;: &quot;VC-60S&quot;,
+      &quot;name&quot;: &quot;Video Creator 60s target 16:9&quot;,
+      &quot;duration_min&quot;: 1,
+      &quot;aspect_ratio&quot;: &quot;16:9&quot;,
+      &quot;fps&quot;: 30,
+      &quot;voice&quot;: &quot;say:Samantha&quot;,
+      &quot;music_track&quot;: &quot;ambient_calm_loop.wav&quot;,
+      &quot;music_volume&quot;: 0.1,
+      &quot;burn_subs&quot;: true,
+      &quot;topic&quot;: &quot;How to plan your day in five simple steps&quot;,
+      &quot;prompt&quot;: &quot;Practical, structured narration.&quot;
+    },
+    &quot;started_at&quot;: &quot;2026-11-14T18:13:16.207676+00:00&quot;,
+    &quot;notes&quot;: &quot;See job/export details.&quot;,
+    &quot;project_id&quot;: &quot;c29db707-4abf-4a1f-92b6-9e17442a6975&quot;,
+    &quot;job_id&quot;: &quot;a0e80fc6-4f00-4471-920a-7aa468329199&quot;,
+    &quot;finished_at&quot;: &quot;2026-11-14T18:13:32.712093+00:00&quot;,
+    &quot;wall_time_sec&quot;: 16.464,
+    &quot;job_elapsed_sec&quot;: 16.445,
+    &quot;job_status&quot;: &quot;succeeded&quot;,
+    &quot;job_stage&quot;: &quot;done&quot;,
+    &quot;job_error&quot;: null,
+    &quot;job_meta&quot;: {
+      &quot;final_video&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/c29db707-4abf-4a1f-92b6-9e17442a6975/renders/final_16x9_720p.mp4&quot;,
+      &quot;srt&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/c29db707-4abf-4a1f-92b6-9e17442a6975/subs/subtitles.srt&quot;,
+      &quot;vtt&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/c29db707-4abf-4a1f-92b6-9e17442a6975/subs/subtitles.vtt&quot;,
+      &quot;ass&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/c29db707-4abf-4a1f-92b6-9e17442a6975/subs/subtitles.ass&quot;,
+      &quot;duration_sec&quot;: 69.49,
+      &quot;aspect_ratio&quot;: &quot;16:9&quot;,
+      &quot;resolution&quot;: &quot;1280x720&quot;,
+      &quot;fps&quot;: 30.0,
+      &quot;size_bytes&quot;: 4801279,
+      &quot;bitrate_kbps&quot;: 552,
+      &quot;scenes&quot;: 4,
+      &quot;subtitles_burned&quot;: true,
+      &quot;subtitle_cues&quot;: 31,
+      &quot;peak_memory_mb&quot;: 711,
+      &quot;render_seconds&quot;: 16.45,
+      &quot;completed_at&quot;: &quot;2026-11-14T18:13:32.684491Z&quot;
+    },
+    &quot;peak_job_memory_mb&quot;: 711,
+    &quot;peak_app_rss_mb&quot;: 708.2,
+    &quot;cpu_percent_avg&quot;: 42.21,
+    &quot;cpu_percent_peak&quot;: 92.9,
+    &quot;system_memory_percent_peak&quot;: 83.4,
+    &quot;swap_used_mb_peak&quot;: 4073.9,
+    &quot;disk_free_gb_min&quot;: 147.8,
+    &quot;memory_pressure_levels_seen&quot;: [
+      &quot;normal&quot;
+    ],
+    &quot;output_duration_sec&quot;: 69.49,
+    &quot;processing_speed_ratio&quot;: 0.2369,
+    &quot;export_size_bytes&quot;: 4801279,
+    &quot;resolution&quot;: &quot;1280x720&quot;,
+    &quot;fps&quot;: 30.0,
+    &quot;scenes&quot;: 4,
+    &quot;script_words&quot;: 206,
+    &quot;subtitle_cues&quot;: 31,
+    &quot;tts_engines&quot;: [
+      &quot;macos-say&quot;
+    ],
+    &quot;visual_mode&quot;: &quot;animated_graphics_labeled&quot;,
+    &quot;export_validation&quot;: {
+      &quot;ok&quot;: false,
+      &quot;checks&quot;: [
+        {
+          &quot;name&quot;: &quot;file_exists&quot;,
+          &quot;ok&quot;: true,
+          &quot;detail&quot;: null
+        },
+        {
+          &quot;name&quot;: &quot;probe_valid_container&quot;,
+          &quot;ok&quot;: false,
+          &quot;detail&quot;: null
+        },
+        {
+          &quot;name&quot;: &quot;has_video_stream&quot;,
+          &quot;ok&quot;: false,
+          &quot;detail&quot;: null
+        },
+        {
+          &quot;name&quot;: &quot;has_audio_stream&quot;,
+          &quot;ok&quot;: false,
+          &quot;detail&quot;: null
+        },
+        {
+          &quot;name&quot;: &quot;video_codec_h264&quot;,
+          &quot;ok&quot;: false,
+          &quot;detail&quot;: null
+        },
+        {
+          &quot;name&quot;: &quot;audio_codec_aac&quot;,
+          &quot;ok&quot;: false,
+          &quot;detail&quot;: null
+        },
+        {
+          &quot;name&quot;: &quot;resolution_720p_target&quot;,
+          &quot;ok&quot;: false,
+          &quot;detail&quot;: {
+            &quot;width&quot;: null,
+            &quot;height&quot;: null,
+            &quot;target&quot;: 720
+          }
+        },
+        {
+          &quot;name&quot;: &quot;duration_positive&quot;,
+          &quot;ok&quot;: false,
+          &quot;detail&quot;: null
+        },
+        {
+          &quot;name&quot;: &quot;file_size_positive&quot;,
+          &quot;ok&quot;: false,
+          &quot;detail&quot;: null
+        },
+        {
+          &quot;name&quot;: &quot;valid_mp4_container&quot;,
+          &quot;ok&quot;: false,
+          &quot;detail&quot;: null
+        }
+      ],
+      &quot;probe&quot;: {
+        &quot;exists&quot;: true,
+        &quot;path&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/c29db707-4abf-4a1f-92b6-9e17442a6975/renders/final_16x9_720p.mp4&quot;,
+        &quot;valid&quot;: false,
+        &quot;error&quot;: &quot;[Errno 2] No such file or directory: &#x27;ffprobe&#x27;&quot;
+      }
+    },
+    &quot;result&quot;: {
+      &quot;final_video&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/c29db707-4abf-4a1f-92b6-9e17442a6975/renders/final_16x9_720p.mp4&quot;,
+      &quot;srt&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/c29db707-4abf-4a1f-92b6-9e17442a6975/subs/subtitles.srt&quot;,
+      &quot;vtt&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/c29db707-4abf-4a1f-92b6-9e17442a6975/subs/subtitles.vtt&quot;,
+      &quot;ass&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/c29db707-4abf-4a1f-92b6-9e17442a6975/subs/subtitles.ass&quot;,
+      &quot;duration_sec&quot;: 69.49,
+      &quot;aspect_ratio&quot;: &quot;16:9&quot;,
+      &quot;resolution&quot;: &quot;1280x720&quot;,
+      &quot;fps&quot;: 30.0,
+      &quot;size_bytes&quot;: 4801279,
+      &quot;bitrate_kbps&quot;: 552,
+      &quot;scenes&quot;: 4,
+      &quot;subtitles_burned&quot;: true,
+      &quot;subtitle_cues&quot;: 31,
+      &quot;peak_memory_mb&quot;: 711,
+      &quot;render_seconds&quot;: 16.45,
+      &quot;completed_at&quot;: &quot;2026-11-14T18:13:32.684491Z&quot;
+    },
+    &quot;timings&quot;: {
+      &quot;timings&quot;: [
+        {
+          &quot;scene&quot;: 1,
+          &quot;start&quot;: 0.0,
+          &quot;end&quot;: 19.85,
+          &quot;text&quot;: &quot;How to plan your day in five simple steps? That question sits at the center of a story most people never slow down to examine. In this informative and measured video, we explore How to plan your day in five simple steps. Practical, structured narration. Together, we will break it down step by step so it is easy to follow and remember.&quot;
+        },
+        {
+          &quot;scene&quot;: 2,
+          &quot;start&quot;: 20.1,
+          &quot;end&quot;: 35.21,
+          &quot;text&quot;: &quot;First, it is important to understand the foundation of How to plan your day in five simple steps. At a basic level, it begins with ideas and actions that shape what comes next. When you recognize these building blocks, the bigger picture starts to make sense.&quot;
+        },
+        {
+          &quot;scene&quot;: 3,
+          &quot;start&quot;: 35.46,
+          &quot;end&quot;: 52.4,
+          &quot;text&quot;: &quot;Next, consider how How to plan your day in five simple steps shows up in real situations. It is not just an abstract concept; it influences decisions, behaviors, and results in ways we can observe every day. Seeing these connections makes the topic more practical and relevant.&quot;
+        },
+        {
+          &quot;scene&quot;: 4,
+          &quot;start&quot;: 52.65,
+          &quot;end&quot;: 69.24,
+          &quot;text&quot;: &quot;So, as we reach the end, remember this: How to plan your day in five simple steps is more than a single idea \u2014 it is a journey of understanding, growth, and possibility. Consider how this shapes the world around you. Thank you for watching, and keep exploring what comes next.&quot;
+        }
+      ],
+      &quot;total_sec&quot;: 69.49
+    },
+    &quot;sample_summary&quot;: {
+      &quot;samples&quot;: 18,
+      &quot;interval_sec&quot;: 1.0,
+      &quot;cpu_percent_avg&quot;: 42.21,
+      &quot;cpu_percent_peak&quot;: 92.9,
+      &quot;app_rss_mb_avg&quot;: 254.07,
+      &quot;app_rss_mb_peak&quot;: 708.2,
+      &quot;system_memory_percent_avg&quot;: 81.77,
+      &quot;system_memory_percent_peak&quot;: 83.4,
+      &quot;system_memory_used_mb_peak&quot;: 6828.8,
+      &quot;system_available_mb_min&quot;: 1363.2,
+      &quot;swap_used_mb_peak&quot;: 4073.9,
+      &quot;disk_free_gb_min&quot;: 147.8,
+      &quot;memory_pressure_levels_seen&quot;: [
+        &quot;normal&quot;
+      ],
+      &quot;sources&quot;: {
+        &quot;app_memory&quot;: &quot;psutil RSS process tree&quot;,
+        &quot;system_memory&quot;: &quot;psutil.virtual_memory&quot;,
+        &quot;swap&quot;: &quot;psutil.swap_memory&quot;,
+        &quot;cpu&quot;: &quot;psutil.cpu_percent&quot;,
+        &quot;memory_pressure&quot;: &quot;macOS memory_pressure (best-effort)&quot;,
+        &quot;gpu&quot;: &quot;not reliably available without privileged powermetrics&quot;,
+        &quot;disk&quot;: &quot;shutil.disk_usage&quot;
+      }
+    },
+    &quot;sample_count&quot;: 18,
+    &quot;pre_sample&quot;: {
+      &quot;ts&quot;: &quot;2026-11-14T18:13:16.221221+00:00&quot;,
+      &quot;cpu_percent&quot;: 15.3,
+      &quot;cpu_per_core&quot;: [
+        16.7,
+        10.5,
+        15.8,
+        15.0,
+        27.8,
+        38.9,
+        0.0,
+        0.0
+      ],
+      &quot;app_memory&quot;: {
+        &quot;rss_mb&quot;: 68.3,
+        &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+      },
+      &quot;system_memory&quot;: {
+        &quot;total_mb&quot;: 8192.0,
+        &quot;available_mb&quot;: 1503.5,
+        &quot;used_mb&quot;: 6688.5,
+        &quot;percent&quot;: 81.6,
+        &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+      },
+      &quot;swap&quot;: {
+        &quot;used_mb&quot;: 4073.9,
+        &quot;total_mb&quot;: 5120.0,
+        &quot;percent&quot;: 79.6,
+        &quot;source&quot;: &quot;psutil.swap_memory&quot;
+      },
+      &quot;memory_pressure&quot;: {
+        &quot;available&quot;: true,
+        &quot;source&quot;: &quot;memory_pressure&quot;,
+        &quot;free_percent_reported&quot;: 38,
+        &quot;level&quot;: &quot;normal&quot;,
+        &quot;swapins&quot;: 524676,
+        &quot;swapouts&quot;: 835078
+      },
+      &quot;disk&quot;: {
+        &quot;total_gb&quot;: 460.43,
+        &quot;free_gb&quot;: 147.84,
+        &quot;used_gb&quot;: 312.59
+      },
+      &quot;gpu&quot;: {
+        &quot;available&quot;: false,
+        &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+        &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+      }
+    },
+    &quot;post_sample&quot;: {
+      &quot;ts&quot;: &quot;2026-11-14T18:13:32.703699+00:00&quot;,
+      &quot;cpu_percent&quot;: 16.7,
+      &quot;cpu_per_core&quot;: [
+        50.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      &quot;app_memory&quot;: {
+        &quot;rss_mb&quot;: 36.6,
+        &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+      },
+      &quot;system_memory&quot;: {
+        &quot;total_mb&quot;: 8192.0,
+        &quot;available_mb&quot;: 2064.5,
+        &quot;used_mb&quot;: 6127.5,
+        &quot;percent&quot;: 74.8,
+        &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+      },
+      &quot;swap&quot;: {
+        &quot;used_mb&quot;: 4073.9,
+        &quot;total_mb&quot;: 5120.0,
+        &quot;percent&quot;: 79.6,
+        &quot;source&quot;: &quot;psutil.swap_memory&quot;
+      },
+      &quot;memory_pressure&quot;: {
+        &quot;available&quot;: true,
+        &quot;source&quot;: &quot;memory_pressure&quot;,
+        &quot;free_percent_reported&quot;: 36,
+        &quot;level&quot;: &quot;normal&quot;,
+        &quot;swapins&quot;: 524801,
+        &quot;swapouts&quot;: 835078
+      },
+      &quot;disk&quot;: {
+        &quot;total_gb&quot;: 460.43,
+        &quot;free_gb&quot;: 147.8,
+        &quot;used_gb&quot;: 312.63
+      },
+      &quot;gpu&quot;: {
+        &quot;available&quot;: false,
+        &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+        &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+      }
+    },
+    &quot;warnings&quot;: [],
+    &quot;samples_excerpt&quot;: [
+      {
+        &quot;ts&quot;: &quot;2026-11-14T18:13:16.231033+00:00&quot;,
+        &quot;cpu_percent&quot;: 0.0,
+        &quot;cpu_per_core&quot;: [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        &quot;app_memory&quot;: {
+          &quot;rss_mb&quot;: 68.9,
+          &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+        },
+        &quot;system_memory&quot;: {
+          &quot;total_mb&quot;: 8192.0,
+          &quot;available_mb&quot;: 1503.5,
+          &quot;used_mb&quot;: 6688.5,
+          &quot;percent&quot;: 81.6,
+          &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+        },
+        &quot;swap&quot;: {
+          &quot;used_mb&quot;: 4073.9,
+          &quot;total_mb&quot;: 5120.0,
+          &quot;percent&quot;: 79.6,
+          &quot;source&quot;: &quot;psutil.swap_memory&quot;
+        },
+        &quot;memory_pressure&quot;: {
+          &quot;available&quot;: true,
+          &quot;source&quot;: &quot;memory_pressure&quot;,
+          &quot;free_percent_reported&quot;: 38,
+          &quot;level&quot;: &quot;normal&quot;,
+          &quot;swapins&quot;: 524676,
+          &quot;swapouts&quot;: 835078
+        },
+        &quot;disk&quot;: {
+          &quot;total_gb&quot;: 460.43,
+          &quot;free_gb&quot;: 147.84,
+          &quot;used_gb&quot;: 312.59
+        },
+        &quot;gpu&quot;: {
+          &quot;available&quot;: false,
+          &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+          &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+        }
+      },
+      {
+        &quot;ts&quot;: &quot;2026-11-14T18:13:17.250578+00:00&quot;,
+        &quot;cpu_percent&quot;: 28.8,
+        &quot;cpu_per_core&quot;: [
+          44.6,
+          40.0,
+          36.6,
+          28.0,
+          41.6,
+          29.7,
+          6.9,
+          3.9
+        ],
+        &quot;app_memory&quot;: {
+          &quot;rss_mb&quot;: 82.7,
+          &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+        },
+        &quot;system_memory&quot;: {
+          &quot;total_mb&quot;: 8192.0,
+          &quot;available_mb&quot;: 1558.4,
+          &quot;used_mb&quot;: 6633.6,
+          &quot;percent&quot;: 81.0,
+          &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+        },
+        &quot;swap&quot;: {
+          &quot;used_mb&quot;: 4073.9,
+          &quot;total_mb&quot;: 5120.0,
+          &quot;percent&quot;: 79.6,
+          &quot;source&quot;: &quot;psutil.swap_memory&quot;
+        },
+        &quot;memory_pressure&quot;: {
+          &quot;available&quot;: true,
+          &quot;source&quot;: &quot;memory_pressure&quot;,
+          &quot;free_percent_reported&quot;: 39,
+          &quot;level&quot;: &quot;normal&quot;,
+          &quot;swapins&quot;: 524732,
+          &quot;swapouts&quot;: 835078
+        },
+        &quot;disk&quot;: {
+          &quot;total_gb&quot;: 460.43,
+          &quot;free_gb&quot;: 147.84,
+          &quot;used_gb&quot;: 312.59
+        },
+        &quot;gpu&quot;: {
+          &quot;available&quot;: false,
+          &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+          &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+        }
+      },
+      {
+        &quot;ts&quot;: &quot;2026-11-14T18:13:18.270953+00:00&quot;,
+        &quot;cpu_percent&quot;: 28.8,
+        &quot;cpu_per_core&quot;: [
+          38.0,
+          35.6,
+          35.6,
+          27.5,
+          34.0,
+          43.6,
+          9.8,
+          6.9
+        ],
+        &quot;app_memory&quot;: {
+          &quot;rss_mb&quot;: 85.4,
+          &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+        },
+        &quot;system_memory&quot;: {
+          &quot;total_mb&quot;: 8192.0,
+          &quot;available_mb&quot;: 1410.5,
+          &quot;used_mb&quot;: 6781.5,
+          &quot;percent&quot;: 82.8,
+          &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+        },
+        &quot;swap&quot;: {
+          &quot;used_mb&quot;: 4073.9,
+          &quot;total_mb&quot;: 5120.0,
+          &quot;percent&quot;: 79.6,
+          &quot;source&quot;: &quot;psutil.swap_memory&quot;
+        },
+        &quot;memory_pressure&quot;: {
+          &quot;available&quot;: true,
+          &quot;source&quot;: &quot;memory_pressure&quot;,
+          &quot;free_percent_reported&quot;: 36,
+          &quot;level&quot;: &quot;normal&quot;,
+          &quot;swapins&quot;: 524767,
+          &quot;swapouts&quot;: 835078
+        },
+        &quot;disk&quot;: {
+          &quot;total_gb&quot;: 460.43,
+          &quot;free_gb&quot;: 147.84,
+          &quot;used_gb&quot;: 312.59
+        },
+        &quot;gpu&quot;: {
+          &quot;available&quot;: false,
+          &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+          &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+        }
+      },
+      {
+        &quot;ts&quot;: &quot;2026-11-14T18:13:19.286089+00:00&quot;,
+        &quot;cpu_percent&quot;: 30.9,
+        &quot;cpu_per_core&quot;: [
+          39.4,
+          37.6,
+          22.8,
+          18.0,
+          58.6,
+          35.4,
+          22.0,
+          14.0
+        ],
+        &quot;app_memory&quot;: {
+          &quot;rss_mb&quot;: 92.5,
+          &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+        },
+        &quot;system_memory&quot;: {
+          &quot;total_mb&quot;: 8192.0,
+          &quot;available_mb&quot;: 1500.9,
+          &quot;used_mb&quot;: 6691.1,
+          &quot;percent&quot;: 81.7,
+          &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+        },
+        &quot;swap&quot;: {
+          &quot;used_mb&quot;: 4073.9,
+          &quot;total_mb&quot;: 5120.0,
+          &quot;percent&quot;: 79.6,
+          &quot;source&quot;: &quot;psutil.swap_memory&quot;
+        },
+        &quot;memory_pressure&quot;: {
+          &quot;available&quot;: true,
+          &quot;source&quot;: &quot;memory_pressure&quot;,
+          &quot;free_percent_reported&quot;: 38,
+          &quot;level&quot;: &quot;normal&quot;,
+          &quot;swapins&quot;: 524767,
+          &quot;swapouts&quot;: 835078
+        },
+        &quot;disk&quot;: {
+          &quot;total_gb&quot;: 460.43,
+          &quot;free_gb&quot;: 147.84,
+          &quot;used_gb&quot;: 312.59
+        },
+        &quot;gpu&quot;: {
+          &quot;available&quot;: false,
+          &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+          &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+        }
+      },
+      {
+        &quot;ts&quot;: &quot;2026-11-14T18:13:20.300335+00:00&quot;,
+        &quot;cpu_percent&quot;: 24.6,
+        &quot;cpu_per_core&quot;: [
+          29.7,
+          19.0,
+          12.0,
+          8.9,
+          69.0,
+          30.7,
+          18.0,
+          9.9
+        ],
+        &quot;app_memory&quot;: {
+          &quot;rss_mb&quot;: 81.5,
+          &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+        },
+        &quot;system_memory&quot;: {
+          &quot;total_mb&quot;: 8192.0,
+          &quot;available_mb&quot;: 1534.9,
+          &quot;used_mb&quot;: 6657.1,
+          &quot;percent&quot;: 81.3,
+          &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+        },
+        &quot;swap&quot;: {
+          &quot;used_mb&quot;: 4073.9,
+          &quot;total_mb&quot;: 5120.0,
+          &quot;percent&quot;: 79.6,
+          &quot;source&quot;: &quot;psutil.swap_memory&quot;
+        },
+        &quot;memory_pressure&quot;: {
+          &quot;available&quot;: true,
+          &quot;source&quot;: &quot;memory_pressure&quot;,
+          &quot;free_percent_reported&quot;: 39,
+          &quot;level&quot;: &quot;normal&quot;,
+          &quot;swapins&quot;: 524767,
+          &quot;swapouts&quot;: 835078
+        },
+        &quot;disk&quot;: {
+          &quot;total_gb&quot;: 460.43,
+          &quot;free_gb&quot;: 147.84,
+          &quot;used_gb&quot;: 312.59
+        },
+        &quot;gpu&quot;: {
+          &quot;available&quot;: false,
+          &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+          &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+        }
+      },
+      {
+        &quot;ts&quot;: &quot;2026-11-14T18:13:21.315080+00:00&quot;,
+        &quot;cpu_percent&quot;: 27.7,
+        &quot;cpu_per_core&quot;: [
+          27.3,
+          24.0,
+          16.0,
+          14.0,
+          73.0,
+          31.0,
+          23.8,
+          12.9
+        ],
+        &quot;app_memory&quot;: {
+          &quot;rss_mb&quot;: 68.8,
+          &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+        },
+        &quot;system_memory&quot;: {
+          &quot;total_mb&quot;: 8192.0,
+          &quot;available_mb&quot;: 1453.2,
+          &quot;used_mb&quot;: 6738.8,
+          &quot;percent&quot;: 82.3,
+          &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+        },
+        &quot;swap&quot;: {
+          &quot;used_mb&quot;: 4073.9,
+          &quot;total_mb&quot;: 5120.0,
+          &quot;percent&quot;: 79.6,
+          &quot;source&quot;: &quot;psutil.swap_memory&quot;
+        },
+        &quot;memory_pressure&quot;: {
+          &quot;available&quot;: true,
+          &quot;source&quot;: &quot;memory_pressure&quot;,
+          &quot;free_percent_reported&quot;: 36,
+          &quot;level&quot;: &quot;normal&quot;,
+          &quot;swapins&quot;: 524777,
+          &quot;swapouts&quot;: 835078
+        },
+        &quot;disk&quot;: {
+          &quot;total_gb&quot;: 460.43,
+          &quot;free_gb&quot;: 147.84,
+          &quot;used_gb&quot;: 312.59
+        },
+        &quot;gpu&quot;: {
+          &quot;available&quot;: false,
+          &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+          &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+        }
+      },
+      {
+        &quot;ts&quot;: &quot;2026-11-14T18:13:22.330831+00:00&quot;,
+        &quot;cpu_percent&quot;: 20.3,
+        &quot;cpu_per_core&quot;: [
+          17.2,
+          12.1,
+          7.0,
+          5.9,
+          62.4,
+          33.0,
+          12.9,
+          12.0
+        ],
+        &quot;app_memory&quot;: {
+          &quot;rss_mb&quot;: 92.9,
+          &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+        },
+        &quot;system_memory&quot;: {
+          &quot;total_mb&quot;: 8192.0,
+          &quot;available_mb&quot;: 1494.3,
+          &quot;used_mb&quot;: 6697.7,
+          &quot;percent&quot;: 81.8,
+          &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+        },
+        &quot;swap&quot;: {
+          &quot;used_mb&quot;: 4073.9,
+          &quot;total_mb&quot;: 5120.0,
+          &quot;percent&quot;: 79.6,
+          &quot;source&quot;: &quot;psutil.swap_memory&quot;
+        },
+        &quot;memory_pressure&quot;: {
+          &quot;available&quot;: true,
+          &quot;source&quot;: &quot;memory_pressure&quot;,
+          &quot;free_percent_reported&quot;: 38,
+          &quot;level&quot;: &quot;normal&quot;,
+          &quot;swapins&quot;: 524785,
+          &quot;swapouts&quot;: 835078
+        },
+        &quot;disk&quot;: {
+          &quot;total_gb&quot;: 460.43,
+          &quot;free_gb&quot;: 147.84,
+          &quot;used_gb&quot;: 312.59
+        },
+        &quot;gpu&quot;: {
+          &quot;available&quot;: false,
+          &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+          &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+        }
+      },
+      {
+        &quot;ts&quot;: &quot;2026-11-14T18:13:23.346947+00:00&quot;,
+        &quot;cpu_percent&quot;: 51.4,
+        &quot;cpu_per_core&quot;: [
+          39.0,
+          37.0,
+          35.6,
+          32.7,
+          75.0,
+          69.6,
+          61.4,
+          60.4
+        ],
+        &quot;app_memory&quot;: {
+          &quot;rss_mb&quot;: 326.0,
+          &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+        },
+        &quot;system_memory&quot;: {
+          &quot;total_mb&quot;: 8192.0,
+          &quot;available_mb&quot;: 1471.5,
+          &quot;used_mb&quot;: 6720.5,
+          &quot;percent&quot;: 82.0,
+          &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+        },
+        &quot;swap&quot;: {
+          &quot;used_mb&quot;: 4073.9,
+          &quot;total_mb&quot;: 5120.0,
+          &quot;percent&quot;: 79.6,
+          &quot;source&quot;: &quot;psutil.swap_memory&quot;
+        },
+        &quot;memory_pressure&quot;: {
+          &quot;available&quot;: true,
+          &quot;source&quot;: &quot;memory_pressure&quot;,
+          &quot;free_percent_reported&quot;: 37,
+          &quot;level&quot;: &quot;normal&quot;,
+          &quot;swapins&quot;: 524785,
+          &quot;swapouts&quot;: 835078
+        },
+        &quot;disk&quot;: {
+          &quot;total_gb&quot;: 460.43,
+          &quot;free_gb&quot;: 147.84,
+          &quot;used_gb&quot;: 312.6
+        },
+        &quot;gpu&quot;: {
+          &quot;available&quot;: false,
+          &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+          &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+        }
+      },
+      {
+        &quot;ts&quot;: &quot;2026-11-14T18:13:24.363532+00:00&quot;,
+        &quot;cpu_percent&quot;: 50.3,
+        &quot;cpu_per_core&quot;: [
+          34.3,
+          34.3,
+          31.0,
+          25.7,
+          73.3,
+          69.0,
+          64.7,
+          69.3
+        ],
+        &quot;app_memory&quot;: {
+          &quot;rss_mb&quot;: 314.8,
+          &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+        },
+        &quot;system_memory&quot;: {
+          &quot;total_mb&quot;: 8192.0,
+          &quot;available_mb&quot;: 1383.3,
+          &quot;used_mb&quot;: 6808.7,
+          &quot;percent&quot;: 83.1,
+          &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+        },
+        &quot;swap&quot;: {
+          &quot;used_mb&quot;: 4073.9,
+          &quot;total_mb&quot;: 5120.0,
+          &quot;percent&quot;: 79.6,
+          &quot;source&quot;: &quot;psutil.swap_memory&quot;
+        },
+        &quot;memory_pressure&quot;: {
+          &quot;available&quot;: true,
+          &quot;source&quot;: &quot;memory_pressure&quot;,
+          &quot;free_percent_reported&quot;: 35,
+          &quot;level&quot;: &quot;normal&quot;,
+          &quot;swapins&quot;: 524785,
+          &quot;swapouts&quot;: 835078
+        },
+        &quot;disk&quot;: {
+          &quot;total_gb&quot;: 460.43,
+          &quot;free_gb&quot;: 147.84,
+          &quot;used_gb&quot;: 312.6
+        },
+        &quot;gpu&quot;: {
+          &quot;available&quot;: false,
+          &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+          &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+        }
+      },
+      {
+        &quot;ts&quot;: &quot;2026-11-14T18:13:25.379190+00:00&quot;,
+        &quot;cpu_percent&quot;: 51.9,
+        &quot;cpu_per_core&quot;: [
+          33.3,
+          33.7,
+          32.7,
+          29.0,
+          70.3,
+          71.3,
+          72.0,
+          72.3
+        ],
+        &quot;app_memory&quot;: {
+          &quot;rss_mb&quot;: 322.7,
+          &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+        },
+        &quot;system_memory&quot;: {
+          &quot;total_mb&quot;: 8192.0,
+          &quot;available_mb&quot;: 1455.9,
+          &quot;used_mb&quot;: 6736.1,
+          &quot;percent&quot;: 82.2,
+          &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+        },
+        &quot;swap&quot;: {
+          &quot;used_mb&quot;: 4073.9,
+          &quot;total_mb&quot;: 5120.0,
+          &quot;percent&quot;: 79.6,
+          &quot;source&quot;: &quot;psutil.swap_memory&quot;
+        },
+        &quot;memory_pressure&quot;: {
+          &quot;available&quot;: true,
+          &quot;source&quot;: &quot;memory_pressure&quot;,
+          &quot;free_percent_reported&quot;: 37,
+          &quot;level&quot;: &quot;normal&quot;,
+          &quot;swapins&quot;: 524789,
+          &quot;swapouts&quot;: 835078
+        },
+        &quot;disk&quot;: {
+          &quot;total_gb&quot;: 460.43,
+          &quot;free_gb&quot;: 147.83,
+          &quot;used_gb&quot;: 312.6
+        },
+        &quot;gpu&quot;: {
+          &quot;available&quot;: false,
+          &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+          &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+        }
+      },
+      {
+        &quot;ts&quot;: &quot;2026-11-14T18:13:26.396796+00:00&quot;,
+        &quot;cpu_percent&quot;: 51.5,
+        &quot;cpu_per_core&quot;: [
+          39.4,
+          42.4,
+          34.3,
+          30.0,
+          67.6,
+          67.3,
+          65.0,
+          64.7
+        ],
+        &quot;app_memory&quot;: {
+          &quot;rss_mb&quot;: 317.9,
+          &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+        },
+        &quot;system_memory&quot;: {
+          &quot;total_mb&quot;: 8192.0,
+          &quot;available_mb&quot;: 1444.9,
+          &quot;used_mb&quot;: 6747.1,
+          &quot;percent&quot;: 82.4,
+          &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+        },
+        &quot;swap&quot;: {
+          &quot;used_mb&quot;: 4073.9,
+          &quot;total_mb&quot;: 5120.0,
+          &quot;percent&quot;: 79.6,
+          &quot;source&quot;: &quot;psutil.swap_memory&quot;
+        },
+        &quot;memory_pressure&quot;: {
+          &quot;available&quot;: true,
+          &quot;source&quot;: &quot;memory_pressure&quot;,
+          &quot;free_percent_reported&quot;: 37,
+          &quot;level&quot;: &quot;normal&quot;,
+          &quot;swapins&quot;: 524793,
+          &quot;swapouts&quot;: 835078
+        },
+        &quot;disk&quot;: {
+          &quot;total_gb&quot;: 460.43,
+          &quot;free_gb&quot;: 147.83,
+          &quot;used_gb&quot;: 312.6
+        },
+        &quot;gpu&quot;: {
+          &quot;available&quot;: false,
+          &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+          &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+        }
+      },
+      {
+        &quot;ts&quot;: &quot;2026-11-14T18:13:27.412187+00:00&quot;,
+        &quot;cpu_percent&quot;: 36.2,
+        &quot;cpu_per_core&quot;: [
+          32.3,
+          30.0,
+          26.7,
+          19.8,
+          65.3,
+          42.6,
+          38.8,
+          33.7
+        ],
+        &quot;app_memory&quot;: {
+          &quot;rss_mb&quot;: 139.7,
+          &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+        },
+        &quot;system_memory&quot;: {
+          &quot;total_mb&quot;: 8192.0,
+          &quot;available_mb&quot;: 1418.2,
+          &quot;used_mb&quot;: 6773.8,
+          &quot;percent&quot;: 82.7,
+          &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+        },
+        &quot;swap&quot;: {
+          &quot;used_mb&quot;: 4073.9,
+          &quot;total_mb&quot;: 5120.0,
+          &quot;percent&quot;: 79.6,
+          &quot;source&quot;: &quot;psutil.swap_memory&quot;
+        },
+        &quot;memory_pressure&quot;: {
+          &quot;available&quot;: true,
+          &quot;source&quot;: &quot;memory_pressure&quot;,
+          &quot;free_percent_reported&quot;: 35,
+          &quot;level&quot;: &quot;normal&quot;,
+          &quot;swapins&quot;: 524793,
+          &quot;swapouts&quot;: 835078
+        },
+        &quot;disk&quot;: {
+          &quot;total_gb&quot;: 460.43,
+          &quot;free_gb&quot;: 147.82,
+          &quot;used_gb&quot;: 312.61
+        },
+        &quot;gpu&quot;: {
+          &quot;available&quot;: false,
+          &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+          &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+        }
+      },
+      {
+        &quot;ts&quot;: &quot;2026-11-14T18:13:28.426771+00:00&quot;,
+        &quot;cpu_percent&quot;: 25.0,
+        &quot;cpu_per_core&quot;: [
+          36.6,
+          25.7,
+          15.8,
+          11.9,
+          15.8,
+          26.5,
+          58.8,
+          8.8
+        ],
+        &quot;app_memory&quot;: {
+          &quot;rss_mb&quot;: 142.1,
+          &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+        },
+        &quot;system_memory&quot;: {
+          &quot;total_mb&quot;: 8192.0,
+          &quot;available_mb&quot;: 1499.1,
+          &quot;used_mb&quot;: 6692.9,
+          &quot;percent&quot;: 81.7,
+          &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+        },
+        &quot;swap&quot;: {
+          &quot;used_mb&quot;: 4073.9,
+          &quot;total_mb&quot;: 5120.0,
+          &quot;percent&quot;: 79.6,
+          &quot;source&quot;: &quot;psutil.swap_memory&quot;
+        },
+        &quot;memory_pressure&quot;: {
+          &quot;available&quot;: true,
+          &quot;source&quot;: &quot;memory_pressure&quot;,
+          &quot;free_percent_reported&quot;: 38,
+          &quot;level&quot;: &quot;normal&quot;,
+          &quot;swapins&quot;: 524793,
+          &quot;swapouts&quot;: 835078
+        },
+        &quot;disk&quot;: {
+          &quot;total_gb&quot;: 460.43,
+          &quot;free_gb&quot;: 147.81,
+          &quot;used_gb&quot;: 312.62
+        },
+        &quot;gpu&quot;: {
+          &quot;available&quot;: false,
+          &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+          &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+        }
+      },
+      {
+        &quot;ts&quot;: &quot;2026-11-14T18:13:29.444015+00:00&quot;,
+        &quot;cpu_percent&quot;: 28.0,
+        &quot;cpu_per_core&quot;: [
+          25.7,
+          21.8,
+          19.0,
+          17.8,
+          18.8,
+          35.3,
+          74.0,
+          11.9
+        ],
+        &quot;app_memory&quot;: {
+          &quot;rss_mb&quot;: 313.3,
+          &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+        },
+        &quot;system_memory&quot;: {
+          &quot;total_mb&quot;: 8192.0,
+          &quot;available_mb&quot;: 1363.2,
+          &quot;used_mb&quot;: 6828.8,
+          &quot;percent&quot;: 83.4,
+          &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+        },
+        &quot;swap&quot;: {
+          &quot;used_mb&quot;: 4073.9,
+          &quot;total_mb&quot;: 5120.0,
+          &quot;percent&quot;: 79.6,
+          &quot;source&quot;: &quot;psutil.swap_memory&quot;
+        },
+        &quot;memory_pressure&quot;: {
+          &quot;available&quot;: true,
+          &quot;source&quot;: &quot;memory_pressure&quot;,
+          &quot;free_percent_reported&quot;: 34,
+          &quot;level&quot;: &quot;normal&quot;,
+          &quot;swapins&quot;: 524797,
+          &quot;swapouts&quot;: 835078
+        },
+        &quot;disk&quot;: {
+          &quot;total_gb&quot;: 460.43,
+          &quot;free_gb&quot;: 147.81,
+          &quot;used_gb&quot;: 312.63
+        },
+        &quot;gpu&quot;: {
+          &quot;available&quot;: false,
+          &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+          &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+        }
+      },
+      {
+        &quot;ts&quot;: &quot;2026-11-14T18:13:30.464297+00:00&quot;,
+        &quot;cpu_percent&quot;: 79.6,
+        &quot;cpu_per_core&quot;: [
+          77.2,
+          76.2,
+          71.3,
+          70.3,
+          90.2,
+          95.0,
+          79.4,
+          77.2
+        ],
+        &quot;app_memory&quot;: {
+          &quot;rss_mb&quot;: 672.0,
+          &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+        },
+        &quot;system_memory&quot;: {
+          &quot;total_mb&quot;: 8192.0,
+          &quot;available_mb&quot;: 1383.7,
+          &quot;used_mb&quot;: 6808.3,
+          &quot;percent&quot;: 83.1,
+          &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+        },
+        &quot;swap&quot;: {
+          &quot;used_mb&quot;: 4073.9,
+          &quot;total_mb&quot;: 5120.0,
+          &quot;percent&quot;: 79.6,
+          &quot;source&quot;: &quot;psutil.swap_memory&quot;
+        },
+        &quot;memory_pressure&quot;: {
+          &quot;available&quot;: true,
+          &quot;source&quot;: &quot;memory_pressure&quot;,
+          &quot;free_percent_reported&quot;: 35,
+          &quot;level&quot;: &quot;normal&quot;,
+          &quot;swapins&quot;: 524801,
+          &quot;swapouts&quot;: 835078
+        },
+        &quot;disk&quot;: {
+          &quot;total_gb&quot;: 460.43,
+          &quot;free_gb&quot;: 147.8,
+          &quot;used_gb&quot;: 312.63
+        },
+        &quot;gpu&quot;: {
+          &quot;available&quot;: false,
+          &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+          &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+        }
+      },
+      {
+        &quot;ts&quot;: &quot;2026-11-14T18:13:31.479820+00:00&quot;,
+        &quot;cpu_percent&quot;: 92.9,
+        &quot;cpu_per_core&quot;: [
+          93.0,
+          91.0,
+          91.1,
+          91.3,
+          95.0,
+          94.2,
+          94.1,
+          93.1
+        ],
+        &quot;app_memory&quot;: {
+          &quot;rss_mb&quot;: 707.3,
+          &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+        },
+        &quot;system_memory&quot;: {
+          &quot;total_mb&quot;: 8192.0,
+          &quot;available_mb&quot;: 1521.5,
+          &quot;used_mb&quot;: 6670.5,
+          &quot;percent&quot;: 81.4,
+          &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+        },
+        &quot;swap&quot;: {
+          &quot;used_mb&quot;: 4073.9,
+          &quot;total_mb&quot;: 5120.0,
+          &quot;percent&quot;: 79.6,
+          &quot;source&quot;: &quot;psutil.swap_memory&quot;
+        },
+        &quot;memory_pressure&quot;: {
+          &quot;available&quot;: true,
+          &quot;source&quot;: &quot;memory_pressure&quot;,
+          &quot;free_percent_reported&quot;: 38,
+          &quot;level&quot;: &quot;normal&quot;,
+          &quot;swapins&quot;: 524801,
+          &quot;swapouts&quot;: 835078
+        },
+        &quot;disk&quot;: {
+          &quot;total_gb&quot;: 460.43,
+          &quot;free_gb&quot;: 147.8,
+          &quot;used_gb&quot;: 312.63
+        },
+        &quot;gpu&quot;: {
+          &quot;available&quot;: false,
+          &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+          &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+        }
+      },
+      {
+        &quot;ts&quot;: &quot;2026-11-14T18:13:32.495346+00:00&quot;,
+        &quot;cpu_percent&quot;: 86.9,
+        &quot;cpu_per_core&quot;: [
+          88.1,
+          85.3,
+          85.1,
+          85.1,
+          89.2,
+          88.1,
+          89.1,
+          85.1
+        ],
+        &quot;app_memory&quot;: {
+          &quot;rss_mb&quot;: 708.2,
+          &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+        },
+        &quot;system_memory&quot;: {
+          &quot;total_mb&quot;: 8192.0,
+          &quot;available_mb&quot;: 1423.9,
+          &quot;used_mb&quot;: 6768.1,
+          &quot;percent&quot;: 82.6,
+          &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+        },
+        &quot;swap&quot;: {
+          &quot;used_mb&quot;: 4073.9,
+          &quot;total_mb&quot;: 5120.0,
+          &quot;percent&quot;: 79.6,
+          &quot;source&quot;: &quot;psutil.swap_memory&quot;
+        },
+        &quot;memory_pressure&quot;: {
+          &quot;available&quot;: true,
+          &quot;source&quot;: &quot;memory_pressure&quot;,
+          &quot;free_percent_reported&quot;: 36,
+          &quot;level&quot;: &quot;normal&quot;,
+          &quot;swapins&quot;: 524801,
+          &quot;swapouts&quot;: 835078
+        },
+        &quot;disk&quot;: {
+          &quot;total_gb&quot;: 460.43,
+          &quot;free_gb&quot;: 147.8,
+          &quot;used_gb&quot;: 312.63
+        },
+        &quot;gpu&quot;: {
+          &quot;available&quot;: false,
+          &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+          &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+        }
+      },
+      {
+        &quot;ts&quot;: &quot;2026-11-14T18:13:32.695252+00:00&quot;,
+        &quot;cpu_percent&quot;: 45.0,
+        &quot;cpu_per_core&quot;: [
+          43.8,
+          40.8,
+          36.2,
+          32.7,
+          62.6,
+          54.2,
+          49.7,
+          40.1
+        ],
+        &quot;app_memory&quot;: {
+          &quot;rss_mb&quot;: 36.5,
+          &quot;source&quot;: &quot;psutil RSS of sampled process tree (app + child processes)&quot;
+        },
+        &quot;system_memory&quot;: {
+          &quot;total_mb&quot;: 8192.0,
+          &quot;available_mb&quot;: 2066.5,
+          &quot;used_mb&quot;: 6125.5,
+          &quot;percent&quot;: 74.8,
+          &quot;source&quot;: &quot;psutil.virtual_memory&quot;
+        },
+        &quot;swap&quot;: {
+          &quot;used_mb&quot;: 4073.9,
+          &quot;total_mb&quot;: 5120.0,
+          &quot;percent&quot;: 79.6,
+          &quot;source&quot;: &quot;psutil.swap_memory&quot;
+        },
+        &quot;memory_pressure&quot;: {
+          &quot;available&quot;: true,
+          &quot;source&quot;: &quot;memory_pressure&quot;,
+          &quot;free_percent_reported&quot;: 36,
+          &quot;level&quot;: &quot;normal&quot;,
+          &quot;swapins&quot;: 524801,
+          &quot;swapouts&quot;: 835078
+        },
+        &quot;disk&quot;: {
+          &quot;total_gb&quot;: 460.43,
+          &quot;free_gb&quot;: 147.8,
+          &quot;used_gb&quot;: 312.63
+        },
+        &quot;gpu&quot;: {
+          &quot;available&quot;: false,
+          &quot;source&quot;: &quot;powermetrics present but requires elevated privileges; not sampled automatically&quot;,
+          &quot;note&quot;: &quot;Run `sudo powermetrics --samplers gpu_power -n 1` manually for a point sample if needed.&quot;
+        }
+      }
+    ]
+  }
+]</pre></div>
+<div class="card"><h2>14. Known Limitations</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>[
+  &quot;AI Auto-Clip Studio (Engine B) not implemented in this build.&quot;,
+  &quot;No Whisper.cpp Tiny/Base installed and no manually verified ground-truth transcripts; WER/alignment not measured.&quot;,
+  &quot;No human-reviewed highlight reference set or human ratings; highlight quality metrics not measured.&quot;,
+  &quot;GPU/Metal utilization not reliably sampled without privileged powermetrics; reported as unavailable.&quot;,
+  &quot;Output duration is narration-driven and may exceed nominal targets.&quot;,
+  &quot;Stress/recovery matrix (repeated runs, cancel mid-transcription/render, restart recovery across all scenarios) only partially covered unless explicitly executed.&quot;
+]</pre></div>
+<div class="card"><h2>15. Final Hardware Capability Assessment</h2>
+<table style='width:100%;border-collapse:collapse;font-size:13px'><thead><tr><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Engine</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Workload</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Classification</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Notes</th></tr></thead><tbody><tr><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>AI_VIDEO_CREATOR</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>1-minute 720p generation</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'><span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#7c3aed;color:#fff;font-size:12px;font-weight:600">EXPERIMENTAL</span></td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>Not measured as passing in this baseline run.</td></tr><tr><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>AI_VIDEO_CREATOR</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>3-minute 720p generation</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'><span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#7c3aed;color:#fff;font-size:12px;font-weight:600">EXPERIMENTAL</span></td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>Not measured as passing in this baseline run.</td></tr><tr><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>AI_VIDEO_CREATOR</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>5-minute 720p generation</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'><span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#7c3aed;color:#fff;font-size:12px;font-weight:600">EXPERIMENTAL</span></td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>Not measured as passing in this baseline run.</td></tr><tr><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>AI_AUTO_CLIP_STUDIO</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>All auto-clip/transcription/highlight workloads</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'><span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#dc2626;color:#fff;font-size:12px;font-weight:600">NOT_RECOMMENDED_ON_THIS_HARDWARE</span></td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>Engine not implemented in this app; capability cannot be assessed from measured runs.</td></tr></tbody></table>
+<pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;engine_a&quot;: &quot;Measured baseline shows Engine A can generate 720p animated-graphics videos locally on M2 8GB in tested cases (see per-test status).&quot;,
+  &quot;engine_b&quot;: &quot;Engine B (AI Auto-Clip Studio) is not implemented; no auto-clip/transcription/highlight capability to classify from measurement.&quot;,
+  &quot;overall&quot;: &quot;PARTIAL \u2014 Engine A benchmarked with real runs; Engine B and requested auto-clip/transcription/highlight/accuracy datasets not available.&quot;
+}</pre>
+</div>
+<div class="card"><h2>Measurement Sources & Raw Samples (excerpt)</h2><p class="muted">Full run JSON contains all samples, logs references and test identifiers.</p><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;measurement_sources&quot;: {
+    &quot;cpu&quot;: &quot;psutil.cpu_percent&quot;,
+    &quot;app_memory&quot;: &quot;psutil process-tree RSS&quot;,
+    &quot;system_memory&quot;: &quot;psutil.virtual_memory&quot;,
+    &quot;swap&quot;: &quot;psutil.swap_memory&quot;,
+    &quot;memory_pressure&quot;: &quot;macOS memory_pressure (best-effort, system-wide)&quot;,
+    &quot;disk&quot;: &quot;shutil.disk_usage&quot;,
+    &quot;gpu_metal&quot;: &quot;not reliably available without privileged powermetrics (reported, not fabricated)&quot;
+  },
+  &quot;sample_count&quot;: 0
+}</pre></div>
+</body></html>
