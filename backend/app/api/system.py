@@ -49,7 +49,25 @@ def system_info(db: Session = Depends(get_db)):
         "projects": {"total": projects, "completed": completed},
         "running_job": running.id if running else None,
         "sequential": True,
+        "clip": _clip_status(db),
     }
+
+
+def _clip_status(db: Session) -> dict:
+    try:
+        from ..clip import transcribe as clip_transcribe
+        from ..clip.models import ClipJob, ClipProject
+
+        return {
+            "projects": db.query(ClipProject).count(),
+            "active_job": (
+                db.query(ClipJob).filter(ClipJob.status.in_(["running", "queued"])).first().id
+                if db.query(ClipJob).filter(ClipJob.status.in_(["running", "queued"])).first() else None
+            ),
+            "asr": clip_transcribe.capability(),
+        }
+    except Exception as e:  # noqa: BLE001
+        return {"available": False, "error": str(e)}
 
 
 @router.post("/system/cleanup")

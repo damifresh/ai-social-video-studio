@@ -6,7 +6,36 @@
 - `subtitles` burn-in requires libass-enabled ffmpeg; if unavailable the app muxes video+audio and provides `.srt/.vtt` sidecars.
 
 ## `409 Another job is running`
-- By design on 8 GB: only one heavy job runs at a time. Wait for completion or check `/api/jobs/<id>`.
+- By design on 8 GB: only one heavy job runs at a time **across both engines**. Engine A jobs are at `/api/jobs/<id>`, Engine B jobs at `/api/clip/jobs/<id>`. The 409 detail names the blocking job type.
+
+## Engine B (Auto-Clip Studio) issues
+
+### "Speech recognition unavailable" / Transcribe disabled
+- Expected when no local ASR is installed. `GET /api/clip/capabilities` lists the exact reasons.
+- Either import an existing `.srt`/`.vtt` (Transcript → Import), or install whisper.cpp:
+  ```bash
+  scripts/install_whisper_cpp.sh --check   # reports missing prerequisites
+  brew install cmake                       # if missing
+  scripts/install_whisper_cpp.sh           # clone + build + ggml-base.en.bin
+  ```
+- Restart the backend and confirm `"available": true`. The app never fabricates a transcript.
+
+### Upload rejected
+- `415`: container not in MP4/MOV/MKV/WebM. Remux first (`ffmpeg -i in.<ext> -c copy out.mp4`).
+- `400` no audio stream: clip timing needs audio; add a track and re-upload.
+- `413`: file exceeds the 8 GB cap (or duration exceeds 3 h).
+
+### Uploading a second video
+- One source per project. The UI replaces the source and **clears the old transcript/clips** because their timings refer to the old file; the API returns `409` unless `replace_existing=true`.
+
+### Captions/subtitles missing in a clip
+- Check the render's `validation` and the clip's transcript. Burn-in requires libass-enabled FFmpeg (`subtitles` filter); the capability/diagnostics endpoint reports the resolved binary.
+
+### Clip count lower than requested
+- Non-overlapping windows that fit the source are limited; the job reports a `shortfall` string instead of duplicating/overlapping spans. Shorten the target durations or use a longer source.
+
+### Crop cuts off the subject
+- Crops are deterministic geometry, not tracking. Choose a manual rectangle (`crop.mode=custom`, fractions of the source frame) and re-render.
 
 ## TTS / voice issues
 - Default `say:*` voices use macOS built-in `say` (offline). Ensure the selected voice exists (`say -v ?`).

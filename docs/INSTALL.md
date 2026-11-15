@@ -67,21 +67,31 @@ pip install "mlx-audio" misaki   # or: pip install "kokoro-mlx[audio]"
 Select a `kokoro:*` voice in the UI. If unavailable the pipeline falls back to **macOS `say`** and records `tts_fallback` in project metadata. Feasibility/peak memory on 8 GB is unproven.
 
 ### Whisper.cpp (subtitle alignment / ASR)
+
+Engine B can use whisper.cpp for local transcription. The repo ships an explicit installer that also verifies the binary and model:
+
+```bash
+scripts/install_whisper_cpp.sh --check   # prerequisites only (no changes)
+brew install cmake                       # if cmake is missing
+scripts/install_whisper_cpp.sh           # clone + build + download ggml-base.en.bin
+```
+
+Manual equivalent:
 ```bash
 git clone https://github.com/ggml-org/whisper.cpp.git models/whisper.cpp
 cd models/whisper.cpp
 cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j --config Release
 bash ./models/download-ggml-model.sh base
 ```
-Set `WHISPER_BIN` / `WHISPER_MODEL` or place under `models/whisper.cpp/...` as detected by `backend/app/core/config.py`. Default subtitles are **narration-timing based** (SRT/VTT/ASS) and work without Whisper.
+Set `WHISPER_BIN` / `WHISPER_MODEL` or place under `models/whisper.cpp/...` as detected by `backend/app/core/config.py`. Default Engine A subtitles are **narration-timing based** (SRT/VTT/ASS) and work without Whisper; Engine B accepts SRT/VTT import and never fabricates a transcript.
 
 ## Environment variables (paths)
 
-`LAVS_DATA_DIR`, `LAVS_ASSETS_DIR`, `LAVS_MODELS_DIR`, `LAVS_FRONTEND_DIST`, `FFMPEG_PATH`, `WHISPER_BIN`, `WHISPER_MODEL` override default locations (useful for packaging).
+`LAVS_DATA_DIR`, `LAVS_CLIP_DIR` (Engine B storage, default `data/clip_projects`), `LAVS_ASSETS_DIR`, `LAVS_MODELS_DIR`, `LAVS_FRONTEND_DIST`, `FFMPEG_PATH`, `WHISPER_BIN`, `WHISPER_MODEL` override default locations (useful for packaging).
 
 ## Storage layout
 
-- Dev data: `data/studio.db`, `data/projects/<id>/{script.json,scenes.json,timings.json,result.json,audio/,images/,video/,subs/,renders/,logs/}`
+- Dev data: `data/studio.db`, `data/projects/<id>/{script.json,scenes.json,timings.json,result.json,audio/,images/,video/,subs/,renders/,logs/}`, `data/clip_projects/<id>/{source,analysis,clips,exports,logs,tmp}`
 - Desktop data: `~/Library/Application Support/AI Social Video Studio/data/...`
 - Models: `models/` (large, not committed) — see `models/README.md`
 

@@ -7,10 +7,10 @@
 - **Verified:** launches, starts loopback backend, serves UI, and completed a real packaged render (73.66 s 1280×720 MP4, 33 cues, peak 728 MB) writing to `~/Library/Application Support/AI Social Video Studio/data/...`. See `docs/DESKTOP_APP.md` and `docs/TEST_REPORT.md`.
 
 ## 2. Full source (web + desktop + pipeline)
-- **Backend:** `backend/` — FastAPI, SQLite, sequential 8 GB-safe pipeline (script/storyboard/TTS/subtitles/audio/visuals/FFmpeg compose), engine detection, recovery, SPA/static serving.
-- **Frontend:** `frontend/` — React + TypeScript + Vite + Tailwind dashboard/editor (Script, Storyboard, Timeline, Voice, Subtitles, Assets, Export), library/exports/settings. Production build verified (`npm run build`).
+- **Backend:** `backend/` — FastAPI, SQLite, sequential 8 GB-safe pipeline (script/storyboard/TTS/subtitles/audio/visuals/FFmpeg compose), engine detection, recovery, SPA/static serving. **Engine B:** `backend/app/clip/` — ingest/probe/analysis/transcription/highlights/render/export with `/api/clip/*`.
+- **Frontend:** `frontend/` — React + TypeScript + Vite + Tailwind dashboard/editor (Script, Storyboard, Timeline, Voice, Subtitles, Assets, Export), Auto-Clip Studio (`/clip`, `/clip/:id`), library/exports/settings. Production build verified (`npm run build`).
 - **Desktop shell:** `desktop/` — Electron `main.cjs`/`preload.cjs`, app metadata/build config.
-- **Scripts:** `scripts/build_desktop.sh`, `scripts/make_dmg.sh`, `scripts/make_icon.py`, `scripts/generate_assets.py` (CC0 music/SFX), `scripts/verify_pipeline.py`, `scripts/verify_extended.py`, startup scripts.
+- **Scripts:** `scripts/build_desktop.sh`, `scripts/make_dmg.sh`, `scripts/make_icon.py`, `scripts/generate_assets.py` (CC0 music/SFX), `scripts/verify_pipeline.py`, `scripts/verify_extended.py`, `scripts/engine_b_e2e.py` (Engine B acceptance harness), `scripts/install_whisper_cpp.sh` (optional local ASR), startup scripts.
 - **Bundled assets:** `assets/music/*`, `assets/sfx/*` with `licenses.json` (original procedural CC0-1.0).
 
 ## 3. Verified demo outputs (720p MP4, H.264/AAC) & evidence
@@ -36,7 +36,10 @@ Dev DB: `data/studio.db`; project folders under `data/projects/<id>/` (script/sc
 - `docs/HARDWARE_LIMITATIONS.md` — 8 GB constraints and optimizations
 - `docs/TROUBLESHOOTING.md` — common issues and recovery
 - `docs/TEST_REPORT.md` — acceptance matrix, measurements, packaged-app evidence, honest gaps
-- `docs/M2_HARDWARE_BENCHMARK.md` — M2 8 GB benchmark suite methodology, measured Engine A results, reports, and honest NOT_IMPLEMENTED/NOT_RUN gaps (Engine B, WER, highlight quality)
+- `docs/ENGINE_B.md` — Engine B feature specs (goal/engine/behaviour/acceptance/constraints/UI/API/docs), data model, API reference, enabling ASR, limitations
+- `docs/TEST_REPORT_ENGINE_B.md` — Engine B harness results, per-case evidence, render measurements, NOT_RUN list
+- `docs/CHANGELOG_ENGINE_B.md` — change record, shared-code touches, verification, rollback
+- `docs/M2_HARDWARE_BENCHMARK.md` — M2 8 GB benchmark suite methodology, measured Engine A results, reports, and honest NOT_IMPLEMENTED/NOT_RUN gaps (Engine B long-duration matrix, WER, highlight quality)
 - `models/README.md` — optional model downloads/licensing notes
 
 ## 6. Benchmark subsystem & measured evidence (2026-11-14)
@@ -46,11 +49,26 @@ Dev DB: `data/studio.db`; project folders under `data/projects/<id>/` (script/sc
   - `579bf2c90636` format checks — **PASS**: 9:16 720×1280 (15.366 s, peak 743.3 MB) and 1:1 720×720 (12.543 s, peak 460.1 MB), exports valid.
   - `8f20fe6de9f9` cancel-during-generation — **PASS**: canceled, 3.7 s, peak 91.8 MB, no crash.
 - **Reports:** `benchmarks/reports/*.json|.html` and `benchmarks/data/runs/*.json` (measured; initial baseline had ffprobe-binary validation bug corrected via ffmpeg-fallback probe).
-- **Not implemented/measured (honest):** Engine B (AI Auto-Clip Studio) absent (A1–A5, highlight pipeline NOT_RUN); Whisper.cpp/models and ground-truth transcripts unavailable (WER/alignment NOT_RUN); no human highlight reference/ratings; GPU/Metal utilization not reliably sampled (privileged powermetrics unavailable); comparative optimization matrix and extended stress matrix not fully executed.
+- **Not implemented/measured (honest):** Engine B 5/15/30/60-minute matrix (A1–A5) NOT_RUN; Whisper.cpp/models and ground-truth transcripts unavailable (WER/alignment NOT_RUN); no human highlight reference/ratings; GPU/Metal utilization not reliably sampled (privileged powermetrics unavailable); comparative optimization matrix and extended stress matrix not fully executed.
+
+## 6b. Engine B (AI Auto-Clip Studio) — implemented and measured (2026-11-15)
+- **Code:** `backend/app/clip/` (models, store, probe, audio, transcribe, highlights, metadata, render, jobs, api), `/api/clip/*`, `frontend/src/pages/ClipStudio.tsx` + `ClipProject.tsx`, `scripts/engine_b_e2e.py`, `scripts/install_whisper_cpp.sh`.
+- **Acceptance run:** `benchmarks/data/engine_b/e2e_cb28b3f43d1f_20261115T080431Z.json` — 15 cases, **14 PASS / 0 FAIL / 1 NOT_RUN** (ASR), 31.64 s total.
+  - Upload MP4/MOV/MKV/WebM: SHA-256 of stored file equals uploaded bytes for all four.
+  - Probe: 67.52 s, 1280×720, 30 fps, H.264/AAC (FFmpeg-fallback probe).
+  - Analyze: 676 envelope windows, 14 silence gaps, 0 scene cuts, 0.4 s, 79 MB peak.
+  - Import: 15 monotonic SRT cues, `timing=file`, `word_timing=estimated`.
+  - Highlights: 2 non-overlapping clips, grounded copy, per-component weights and reasons.
+  - Render: 9:16 720×1280 (1.42 MB), 16:9 1280×720 (1.24 MB), 1:1 720×720 (1.05 MB); 44.14 s; 28 cues; −16.0 LUFS; A/V delta < 0.1 s; peaks 348–402 MB.
+  - Batch: 2 requested → 2 exported with per-item manifest, all validations ok.
+  - Cancel → `canceled`, tmp cleaned; restart → `interrupted`; source replacement → 409/200 with stale clips/transcript cleared.
+- **Engine A regression after the change:** `benchmarks/data/runs/9bd9e75d5312.json` — **PASS** (16.464 s wall, 69.49 s output, 725.9 MB peak).
+- **Honest gaps:** whisper.cpp not installed → ASR `NOT_RUN`, no WER; standalone `ffprobe` absent; no human highlight ratings; packaged app not rebuilt for Engine B; no automated browser click-through.
 
 ## 7. Honest capability notes
 - **Local/offline, no paid APIs:** yes (macOS `say`, FFmpeg, Pillow, deterministic script, loopback-only backend). Internet not required for generation.
-- **Kokoro/Whisper.cpp:** adapters and fallbacks implemented; **not installed/verified** in this build. Timing-based subtitles and macOS `say` are the proven path.
+- **Kokoro/Whisper.cpp:** adapters and fallbacks implemented; **not installed/verified** in this build. Timing-based subtitles and macOS `say` are the proven path for Engine A; Engine B uses SRT/VTT import and gates ASR explicitly (`NOT_RUN`, no WER claim).
+- **Engine B reframing:** deterministic geometry only — no face/subject tracking; no virality prediction from highlight scores.
 - **Diffusion video:** not enabled on 8 GB; visuals are **animated graphics/stills** (labeled), not AI-generated footage.
 - **Narration-driven duration:** outputs may exceed nominal targets (e.g. 5-min target → 329 s at measured speech rate).
 - **Unsigned app / UI automation:** Gatekeeper override may be needed; no automated in-Electron click-through test.

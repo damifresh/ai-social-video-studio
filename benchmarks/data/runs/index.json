@@ -1,5 +1,55 @@
 [
   {
+    "id": "9bd9e75d5312",
+    "created_at": "2026-11-15T08:05:53.922042+00:00",
+    "updated_at": "2026-11-15T08:06:10.628966+00:00",
+    "status": "completed",
+    "suite": "m2_hardware_benchmark_baseline",
+    "title": "Engine A Baseline (CLI quick)",
+    "summary": {
+      "overall_status": "PASS",
+      "total": 1,
+      "pass": 1,
+      "warning": 0,
+      "fail": 0,
+      "measurement_sources": {
+        "cpu": "psutil.cpu_percent",
+        "app_memory": "psutil process-tree RSS",
+        "system_memory": "psutil.virtual_memory",
+        "swap": "psutil.swap_memory",
+        "memory_pressure": "macOS memory_pressure (best-effort, system-wide)",
+        "disk": "shutil.disk_usage",
+        "gpu_metal": "not reliably available without privileged powermetrics (reported, not fabricated)"
+      },
+      "report_note": "Measured results only; unimplemented/unavailable tests recorded as NOT_RUN/NOT_IMPLEMENTED."
+    }
+  },
+  {
+    "id": "b212fdcea66d",
+    "created_at": "2026-11-14T18:57:58.389970+00:00",
+    "updated_at": "2026-11-14T18:59:12.554324+00:00",
+    "status": "completed",
+    "suite": "m2_hardware_benchmark_baseline",
+    "title": "Engine A Baseline (UI)",
+    "summary": {
+      "overall_status": "PASS",
+      "total": 3,
+      "pass": 3,
+      "warning": 0,
+      "fail": 0,
+      "measurement_sources": {
+        "cpu": "psutil.cpu_percent",
+        "app_memory": "psutil process-tree RSS",
+        "system_memory": "psutil.virtual_memory",
+        "swap": "psutil.swap_memory",
+        "memory_pressure": "macOS memory_pressure (best-effort, system-wide)",
+        "disk": "shutil.disk_usage",
+        "gpu_metal": "not reliably available without privileged powermetrics (reported, not fabricated)"
+      },
+      "report_note": "Measured results only; unimplemented/unavailable tests recorded as NOT_RUN/NOT_IMPLEMENTED."
+    }
+  },
+  {
     "id": "8f20fe6de9f9",
     "created_at": "2026-11-14T18:25:14.662843+00:00",
     "updated_at": "2026-11-14T18:25:14.785277+00:00",

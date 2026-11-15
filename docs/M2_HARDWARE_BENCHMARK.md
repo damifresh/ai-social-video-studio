@@ -48,15 +48,20 @@ Source: `benchmarks/data/runs/*` and generated reports (`environment.hardware`, 
 
 ## 4. AI Auto-Clip results (Engine B)
 
+Engine B (AI Auto-Clip Studio) **is implemented** in this codebase and is measured by its own
+harness, `scripts/engine_b_e2e.py` — see [`TEST_REPORT_ENGINE_B.md`](TEST_REPORT_ENGINE_B.md)
+and `benchmarks/data/engine_b/`. The A1–A5 duration matrix below belongs to *this* benchmark
+suite and was **not executed** here.
+
 | Test | Duration | Status | Reason |
 |---|---:|---|---|
-| A1 | 1 min | **NOT_RUN** | Engine B (AI Auto-Clip Studio) not implemented in this codebase |
-| A2 | 5 min | **NOT_RUN** | No import/proxy/audio extraction/transcription/highlight/clip-render pipeline or UI |
-| A3 | 15 min | **NOT_RUN** | Not implemented |
-| A4 | 30 min | **NOT_RUN** | Not implemented |
-| A5 | 60 min | **NOT_RUN** | Not implemented |
+| A1 | 1 min | **NOT_RUN** | Engine B implemented, but this suite's A1 case was not run; a 67.5 s source was measured by the Engine B harness (14 PASS / 0 FAIL / 1 NOT_RUN ASR) |
+| A2 | 5 min | **NOT_RUN** | Not executed in this suite |
+| A3 | 15 min | **NOT_RUN** | Not executed |
+| A4 | 30 min | **NOT_RUN** | Not executed |
+| A5 | 60 min | **NOT_RUN** | Not executed |
 
-**Measured values:** none (no Engine B capability to execute). No fabricated times/memory/swap/CPU/export metrics.
+**Measured values (this suite):** none for A1–A5. Engine B's separate harness measured a 67.52 s synthetic source: renders 2.41 s / 2.17 s / 1.85 s wall and 402 / 376 / 348 MB peak RSS for 9:16 / 16:9 / 1:1 at 44.14 s output. No fabricated times/memory/swap/CPU/export metrics.
 
 ## 5. Transcription accuracy
 
@@ -104,7 +109,7 @@ Validation checks executed on real outputs (ffmpeg-fallback probe; ffprobe binar
 |---|---|---|
 | 5 consecutive 1-minute videos | **NOT_RUN** (this benchmark session) | Prior ad-hoc acceptance runs completed without OOM; no automated 5x loop benchmark recorded here |
 | 3 consecutive 5-minute videos | **NOT_RUN** | High time/memory cost on 8 GB; not executed in this session |
-| Multiple clips from one 30-minute source (Engine B) | **NOT_RUN** | Engine B not implemented |
+| Multiple clips from one 30-minute source (Engine B) | **NOT_RUN** | Engine B implemented; 30-minute case not executed |
 | Cancel job during transcription | **NOT_RUN** | No transcription pipeline/Whisper job in Engine A |
 | Cancel job during rendering/generation | **PASS** (`8f20fe6de9f9`, STAB-CANCEL) | `job.canceled=True` set ~2.5 s into real run; terminal `job_status=canceled`, wall 3.7 s, peak app RSS 91.8 MB, **no crash observed** |
 | Restart app during recoverable workflow | **NOT_RUN** (automated) | Startup recovery logic exists and previously verified (`interrupted` marking); automated restart benchmark not executed here |
@@ -124,7 +129,7 @@ Validation checks executed on real outputs (ffmpeg-fallback probe; ffprobe binar
 | Correct A/V sync | **PASS** by prior verified acceptance probes; benchmark probe confirms valid streams/duration (detailed drift not separately instrumented) |
 | Correct timestamp handling | **NOT FULLY BENCHMARKED** (Engine B timestamps N/A; Engine A subtitle timing is narration-derived) |
 | Saved projects reopen successfully | **PASS** in prior acceptance/API evidence (not re-timed here) |
-| No silent loss of uploaded source files | **N/A / NOT_RUN** for Engine B uploads |
+| No silent loss of uploaded source files | **PASS for Engine B uploads (separate harness)** | SHA-256 of stored file equals uploaded bytes for MP4/MOV/MKV/WebM |
 | Processing errors reported accurately | **PASS** (job statuses/errors recorded; initial ffprobe-binary validation issue identified and corrected in reporting/tooling) |
 | Memory released after jobs (settling) | **PARTIAL** (post-run samples captured; long-interval settling not formally profiled) |
 
@@ -134,7 +139,7 @@ Validation checks executed on real outputs (ffmpeg-fallback probe; ffprobe binar
 |---|---|---|
 | A. Whisper Tiny vs Base | **NOT_RUN** | Models/binaries not installed |
 | B. CPU vs Apple Silicon acceleration | **NOT_RUN** (comparative) | No controlled A/B measured |
-| C. Low-res proxy vs original-resolution analysis | **NOT_RUN** | Engine B analysis path not implemented |
+| C. Low-res proxy vs original-resolution analysis | **NOT_RUN** | Proxy path not implemented; current analysis uses 16 kHz audio + 2 fps 320 px scan |
 | D. FFmpeg encoding presets | **NOT_RUN** (comparative) | No controlled comparison executed |
 | E. Sequential vs concurrent pipeline | **NOT_RUN** (comparative) | Sequential enforced by design for 8 GB safety |
 | F. Processing chunk sizes | **NOT_RUN** | Not varied/measured comparatively |
@@ -146,7 +151,7 @@ Validation checks executed on real outputs (ffmpeg-fallback probe; ffprobe binar
 
 - **Benchmark command:** `PYTHONPATH=backend backend/.venv/bin/python scripts/benchmark_suite.py [--quick|--full]` (real Engine A runs + reports under `benchmarks/`).
 - **API/UI:** `/api/benchmark/*` endpoints and `M2 Benchmark` dashboard for live samples, run history, and report paths.
-- **Unit/integration test suite (requested breadth):** **NOT_IMPLEMENTED** as a comprehensive automated suite for Engine B/transcription/highlight/FFmpeg export matrix/project recovery beyond existing app behavior. No pytest benchmark suite added beyond benchmark runner scripts; existing repo had no benchmark tests.
+- **Unit/integration test suite (requested breadth):** Engine B now has an acceptance harness (`scripts/engine_b_e2e.py`, 15 cases) but there is still **no comprehensive pytest suite** for the full transcription/highlight/FFmpeg export matrix, and no benchmark-suite integration for Engine B.
 
 ## 13. Benchmark reports (generated artifacts)
 
@@ -166,7 +171,7 @@ Raw run records: `benchmarks/data/runs/*.json` (include samples excerpts, config
 | AI Video Creator (Engine A) | 3-minute 720p generation | **SUPPORTED_WITH_OPTIMIZATION** (prior acceptance evidence) | 183.55 s output measured previously (see `docs/TEST_REPORT.md`); not rerun in this automated benchmark session |
 | AI Video Creator (Engine A) | 5-minute 720p generation | **SUPPORTED_WITH_OPTIMIZATION** (prior acceptance evidence) | 329.1 s, peak 746 MB measured previously; narration exceeded 300 s target |
 | AI Video Creator (Engine A) | Cancel during generation (basic) | **SUPPORTED_WITH_OPTIMIZATION** | Measured PASS (canceled, no crash); checkpoint-dependent responsiveness |
-| AI Auto-Clip Studio (Engine B) | All auto-clip / transcription / highlight workloads | **NOT_RECOMMENDED_ON_THIS_HARDWARE** (classification pending implementation) | **Not implemented**; no measured capability. Marked not recommended for reliance because it cannot be delivered/validated in current app. |
+| AI Auto-Clip Studio (Engine B) | Auto-clip on short sources (≤ ~1–2 min tested) | **SUPPORTED_WITH_OPTIMIZATION** (measured separately) | 67.52 s synthetic source: 3 aspects validated, 1.85–2.41 s per render, 348–402 MB peak. Long-duration and ASR paths **not measured** (`NOT_RUN`). |
 
 ## 15. Bottleneck analysis, recommendations, failures, limitations
 
@@ -176,6 +181,6 @@ Raw run records: `benchmarks/data/runs/*.json` (include samples excerpts, config
 
 **Failed tests (executed benchmark suite):** none in final corrected results. (Initial `6a80bee33c89` report marked FAIL due to missing `ffprobe` binary in validator — **measurement/reporting defect corrected**, export itself was valid and revalidated PASS.)
 
-**Known limitations:** Engine B absent; Whisper/Kokoro not installed/verified; no WER/ground-truth datasets; no highlight reference/human ratings; GPU/Metal utilization not reliably sampled; background workload not isolated; `/usr/bin/time -l` max-RSS not captured; some stress/recovery/long-duration benchmark matrix items not rerun this session (documented as NOT_RUN where applicable).
+**Known limitations:** Engine B implemented but its 5/15/30/60-minute matrix and ASR path are NOT_RUN; Whisper/Kokoro not installed/verified; no WER/ground-truth datasets; no highlight reference/human ratings; GPU/Metal utilization not reliably sampled; background workload not isolated; `/usr/bin/time -l` max-RSS not captured; some stress/recovery/long-duration benchmark matrix items not rerun this session (documented as NOT_RUN where applicable).
 
-**Final assessment:** Engine A is **measurably capable** of local 720p animated-graphics video generation on M2 8 GB for tested cases with valid exports and no observed crashes, within the constraints above. Engine B and requested transcription/highlight quality/accuracy benchmarks **cannot be claimed as supported** because they are not implemented or lack required datasets/models/human evaluation in this build. All results above are based on actual runs and captured reports.
+**Final assessment:** Engine A is **measurably capable** of local 720p animated-graphics video generation on M2 8 GB for tested cases with valid exports and no observed crashes, within the constraints above. Engine B is implemented and measured for short-source clipping by its own harness (14 PASS / 0 FAIL / 1 NOT_RUN), but its long-duration matrix, ASR accuracy/WER and highlight quality against human judgement remain unverified. All results above are based on actual runs and captured reports.

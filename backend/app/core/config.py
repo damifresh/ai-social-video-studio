@@ -22,6 +22,7 @@ def _env_path(name: str, default: Path) -> Path:
 
 DATA_DIR = _env_path("LAVS_DATA_DIR", ROOT / "data")
 PROJECTS_DIR = DATA_DIR / "projects"
+CLIP_PROJECTS_DIR = _env_path("LAVS_CLIP_DIR", DATA_DIR / "clip_projects")
 DB_PATH = DATA_DIR / "studio.db"
 ASSETS_DIR = _env_path("LAVS_ASSETS_DIR", ROOT / "assets")
 MODELS_DIR = _env_path("LAVS_MODELS_DIR", ROOT / "models")
@@ -128,11 +129,14 @@ class Settings(BaseModel):
     models_dir: str = str(MODELS_DIR)
     frontend_dist: str = str(FRONTEND_DIST)
     max_concurrent_jobs: int = 1  # 8GB safety: sequential
+    clip_max_upload_bytes: int = 8 * 1024**3  # 8 GB cap per uploaded source
+    clip_max_duration_sec: int = 3 * 60 * 60  # 3 h cap
+    clip_chunk_bytes: int = 4 * 1024**2  # streaming copy chunk
 
 
 settings = Settings()
 
-for p in [DATA_DIR, PROJECTS_DIR, ASSETS_DIR, MODELS_DIR, MUSIC_DIR, SFX_DIR, FONTS_DIR]:
+for p in [DATA_DIR, PROJECTS_DIR, CLIP_PROJECTS_DIR, ASSETS_DIR, MODELS_DIR, MUSIC_DIR, SFX_DIR, FONTS_DIR]:
     try:
         p.mkdir(parents=True, exist_ok=True)
     except Exception:

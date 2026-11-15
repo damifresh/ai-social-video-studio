@@ -1,0 +1,781 @@
+{
+  "id": "6b351d3378fb",
+  "suite": "engine_b_e2e",
+  "created_at": "2026-11-15T07:52:57.256193+00:00",
+  "environment": {
+    "date": "2026-11-15T07:52:57.256193+00:00",
+    "machine": "Apple M2 / 8 GB (as reported by platform)",
+    "platform": "darwin",
+    "python": "3.11.18",
+    "ffmpeg": "/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/backend/.venv/lib/python3.11/site-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1",
+    "asr": {
+      "backend": "unavailable",
+      "available": false,
+      "bin": null,
+      "bin_path": null,
+      "model": null,
+      "model_path": null,
+      "reasons": [
+        "whisper.cpp binary not found (set WHISPER_BIN or build into models/whisper.cpp/build/bin)",
+        "no GGML model found (set WHISPER_MODEL or place ggml-base.en.bin in models/whisper.cpp/models)"
+      ],
+      "manual_import": true,
+      "note": "Manual SRT/VTT/plain-text import always available. ASR is never simulated."
+    },
+    "global_memory_percent": 84.6,
+    "source_kind": "synthetic local TTS narration + FFmpeg colour video (real files, generated on this machine)",
+    "fixture": {
+      "duration_sec": 35.06,
+      "source": "/var/folders/13/hptm7dt95psgf3y_8ktd8d980000gn/T/engineb_fixture_1tupsgfn/source.mp4",
+      "probe": {
+        "probe_source": "ffmpeg_fallback",
+        "size_bytes": 805426,
+        "duration": 35.06,
+        "video_codec": "h264",
+        "width": 1280,
+        "height": 720,
+        "audio_codec": "aac",
+        "sample_rate": 48000,
+        "channels": 2,
+        "audio_streams": 1,
+        "fps": 30.0,
+        "bitrate_kbps": 183,
+        "container": "mov",
+        "video_duration": 35.06,
+        "audio_duration": 35.06
+      },
+      "variants": {
+        ".mov": "/var/folders/13/hptm7dt95psgf3y_8ktd8d980000gn/T/engineb_fixture_1tupsgfn/short.mov",
+        ".mkv": "/var/folders/13/hptm7dt95psgf3y_8ktd8d980000gn/T/engineb_fixture_1tupsgfn/short.mkv",
+        ".webm": "/var/folders/13/hptm7dt95psgf3y_8ktd8d980000gn/T/engineb_fixture_1tupsgfn/short.webm"
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "FIXTURE",
+      "name": "Generated local source video + exact SRT",
+      "status": "PASS",
+      "checks": {
+        "has_video": true,
+        "has_srt": true,
+        "audio_streams": true
+      },
+      "metrics": {
+        "duration_sec": 35.06
+      },
+      "notes": "",
+      "evidence": {}
+    },
+    {
+      "id": "B1-UPLOAD",
+      "name": "Upload MP4/MOV/MKV/WebM + preserved original bytes",
+      "status": "PASS",
+      "checks": {
+        "mp4": true,
+        "mov": true,
+        "mkv": true,
+        "webm": true,
+        "sha256_match": {
+          "mp4": true,
+          "mov": true,
+          "mkv": true,
+          "webm": true
+        }
+      },
+      "metrics": {},
+      "notes": "",
+      "evidence": {
+        "metadata": {
+          "mp4": {
+            "duration_sec": 35.06,
+            "expected_duration_sec": 35.06,
+            "duration_ok": true,
+            "width": 1280,
+            "height": 720,
+            "audio_streams": 1,
+            "vcodec": "h264",
+            "acodec": "aac",
+            "probe_source": "ffmpeg_fallback",
+            "replaced": {
+              "sources": 0,
+              "clips": 0
+            }
+          },
+          "mov": {
+            "duration_sec": 6.0,
+            "expected_duration_sec": 6.0,
+            "duration_ok": true,
+            "width": 1280,
+            "height": 720,
+            "audio_streams": 1,
+            "vcodec": "h264",
+            "acodec": "aac",
+            "probe_source": "ffmpeg_fallback",
+            "replaced": {
+              "sources": 0,
+              "clips": 0
+            }
+          },
+          "mkv": {
+            "duration_sec": 6.02,
+            "expected_duration_sec": 6.0,
+            "duration_ok": true,
+            "width": 1280,
+            "height": 720,
+            "audio_streams": 1,
+            "vcodec": "h264",
+            "acodec": "aac",
+            "probe_source": "ffmpeg_fallback",
+            "replaced": {
+              "sources": 0,
+              "clips": 0
+            }
+          },
+          "webm": {
+            "duration_sec": 6.01,
+            "expected_duration_sec": 6.0,
+            "duration_ok": true,
+            "width": 1280,
+            "height": 720,
+            "audio_streams": 1,
+            "vcodec": "vp9",
+            "acodec": "opus",
+            "probe_source": "ffmpeg_fallback",
+            "replaced": {
+              "sources": 0,
+              "clips": 0
+            }
+          }
+        },
+        "errors": {}
+      }
+    },
+    {
+      "id": "B1-METADATA",
+      "name": "Probe metadata accuracy (incl. MKV/WebM dimensions)",
+      "status": "PASS",
+      "checks": {
+        "source": {
+          "duration_sec": 35.06,
+          "fps": 30.0,
+          "width": 1280,
+          "height": 720,
+          "vcodec": "h264",
+          "acodec": "aac"
+        },
+        "all_containers": true
+      },
+      "metrics": {},
+      "notes": "",
+      "evidence": {
+        "per_container": {
+          "mp4": {
+            "duration_sec": 35.06,
+            "expected_duration_sec": 35.06,
+            "duration_ok": true,
+            "width": 1280,
+            "height": 720,
+            "audio_streams": 1,
+            "vcodec": "h264",
+            "acodec": "aac",
+            "probe_source": "ffmpeg_fallback",
+            "replaced": {
+              "sources": 0,
+              "clips": 0
+            }
+          },
+          "mov": {
+            "duration_sec": 6.0,
+            "expected_duration_sec": 6.0,
+            "duration_ok": true,
+            "width": 1280,
+            "height": 720,
+            "audio_streams": 1,
+            "vcodec": "h264",
+            "acodec": "aac",
+            "probe_source": "ffmpeg_fallback",
+            "replaced": {
+              "sources": 0,
+              "clips": 0
+            }
+          },
+          "mkv": {
+            "duration_sec": 6.02,
+            "expected_duration_sec": 6.0,
+            "duration_ok": true,
+            "width": 1280,
+            "height": 720,
+            "audio_streams": 1,
+            "vcodec": "h264",
+            "acodec": "aac",
+            "probe_source": "ffmpeg_fallback",
+            "replaced": {
+              "sources": 0,
+              "clips": 0
+            }
+          },
+          "webm": {
+            "duration_sec": 6.01,
+            "expected_duration_sec": 6.0,
+            "duration_ok": true,
+            "width": 1280,
+            "height": 720,
+            "audio_streams": 1,
+            "vcodec": "vp9",
+            "acodec": "opus",
+            "probe_source": "ffmpeg_fallback",
+            "replaced": {
+              "sources": 0,
+              "clips": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "B2-ANALYZE",
+      "name": "Audio extraction + silence/envelope/scene analysis",
+      "status": "PASS",
+      "checks": {
+        "job_status": "succeeded"
+      },
+      "metrics": {
+        "wall_sec": 0.24,
+        "peak_rss_mb": 73,
+        "result": {
+          "audio": "/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/clip_projects/5ca18837-4c39-46f7-8e24-1139ef87ab72/analysis/audio16k.wav",
+          "silence_gaps": 7,
+          "scene_cuts": 0,
+          "envelope_windows": 351
+        }
+      },
+      "notes": "",
+      "evidence": {}
+    },
+    {
+      "id": "B3-ASR",
+      "name": "whisper.cpp transcription",
+      "status": "NOT_RUN",
+      "checks": {},
+      "metrics": {},
+      "notes": "whisper.cpp binary/model not installed; capability gating verified instead. No transcript is fabricated.",
+      "evidence": {}
+    },
+    {
+      "id": "B3-IMPORT",
+      "name": "Manual SRT import (honest fallback path)",
+      "status": "PASS",
+      "checks": {
+        "status": 200,
+        "segments": 8,
+        "timing": "file",
+        "word_timing": "estimated",
+        "monotonic": true,
+        "within_duration": true
+      },
+      "metrics": {},
+      "notes": "Timings come from the fixture's measured speech; word timing is labeled estimated.",
+      "evidence": {}
+    },
+    {
+      "id": "B4-HIGHLIGHTS",
+      "name": "Transparent highlight scoring (grounded, non-overlapping)",
+      "status": "PASS",
+      "checks": {
+        "job_status": "succeeded",
+        "clips": 2,
+        "grounded_copy": true,
+        "overlaps": 0,
+        "scores_present": true,
+        "reasons_present": true
+      },
+      "metrics": {
+        "wall_sec": 0.02
+      },
+      "notes": "",
+      "evidence": {
+        "first": {
+          "id": "3121eb1d-a38e-4475-92c4-16ed44a2978c",
+          "clip_project_id": "5ca18837-4c39-46f7-8e24-1139ef87ab72",
+          "start_sec": 0.0,
+          "end_sec": 17.89,
+          "duration_sec": 17.89,
+          "transcript_text": "Most people try to build better habits by relying on motivation, and that is the first mistake. Motivation is a feeling, and feelings change from one day to the next. A system, on the other hand, keeps working even when you do not feel like it. Here is a simple example from my own week.",
+          "title": "Most people try to build better habits by relying on",
+          "hook": "Most people try to build better habits by relying on motivation, and that is the first",
+          "category": "motivational",
+          "score": 64.69,
+          "score_json": {
+            "components": {
+              "hook": {
+                "raw": 0.5,
+                "weight": 0.2,
+                "contribution": 0.1
+              },
+              "insight": {
+                "raw": 0.6667,
+                "weight": 0.14,
+                "contribution": 0.0933
+              },
+              "emotion": {
+                "raw": 0.0,
+                "weight": 0.12,
+                "contribution": 0.0
+              },
+              "density": {
+                "raw": 1.0,
+                "weight": 0.1,
+                "contribution": 0.1
+              },
+              "audio": {
+                "raw": 0.6793,
+                "weight": 0.12,
+                "contribution": 0.0815
+              },
+              "boundary": {
+                "raw": 0.6,
+                "weight": 0.12,
+                "contribution": 0.072
+              },
+              "completeness": {
+                "raw": 1.0,
+                "weight": 0.1,
+                "contribution": 0.1
+              },
+              "novelty": {
+                "raw": 1.0,
+                "weight": 0.1,
+                "contribution": 0.1
+              }
+            },
+            "metrics": {
+              "words": 55,
+              "words_per_sec": 3.07,
+              "mean_dbfs": -19.04,
+              "silence_ratio": 0.179
+            },
+            "weights": {
+              "hook": 0.2,
+              "insight": 0.14,
+              "emotion": 0.12,
+              "density": 0.1,
+              "audio": 0.12,
+              "boundary": 0.12,
+              "completeness": 0.1,
+              "novelty": 0.1
+            },
+            "params": {
+              "durations": [
+                12.0,
+                20.0
+              ],
+              "count": 3,
+              "overlap_tolerance_sec": 0.2,
+              "weights": {
+                "hook": 0.2,
+                "insight": 0.14,
+                "emotion": 0.12,
+                "density": 0.1,
+                "audio": 0.12,
+                "boundary": 0.12,
+                "completeness": 0.1,
+                "novelty": 0.1
+              },
+              "window_rule": "sentence-aligned, 80%-130% of requested duration, nearest to target"
+            }
+          },
+          "reason": "Scored 65/100 for strong opening hook (0.50) and steady speech density (1.00); 3.07 words/s, 17% silence.",
+          "selected": true,
+          "state": "new",
+          "edit": {
+            "crop": null,
+            "caption_style": {
+              "font": "Arial",
+              "size": 54,
+              "position": "bottom",
+              "primary": "#FFFFFF",
+              "highlight": "#FFD166",
+              "outline": "#000000",
+              "bold": true,
+              "keyword_highlight": true,
+              "max_chars": 32
+            },
+            "audio": {
+              "normalize": true,
+              "music": null,
+              "music_volume": 0.18
+            },
+            "aspect": "9:16",
+            "preset": "tiktok",
+            "burn_captions": true,
+            "fps": 30
+          },
+          "renders": []
+        }
+      }
+    },
+    {
+      "id": "B5-RENDER",
+      "name": "Render 720p H.264/AAC in 9:16, 16:9, 1:1 with captions",
+      "status": "PASS",
+      "checks": {
+        "9:16": true,
+        "16:9": true,
+        "1:1": true
+      },
+      "metrics": {
+        "9:16": {
+          "wall_sec": 0.99,
+          "peak_rss_mb": 390
+        },
+        "16:9": {
+          "wall_sec": 0.94,
+          "peak_rss_mb": 372
+        },
+        "1:1": {
+          "wall_sec": 0.77,
+          "peak_rss_mb": 298
+        }
+      },
+      "notes": "",
+      "evidence": {
+        "9:16": {
+          "status": "succeeded",
+          "wall_sec": 0.99,
+          "peak_rss_mb": 390,
+          "error": null,
+          "validation": {
+            "exists": true,
+            "resolution_ok": true,
+            "video_codec_h264": true,
+            "audio_codec_aac": true,
+            "duration_ok": true,
+            "audio_present": true,
+            "size_ok": true,
+            "av_sync_ok": true,
+            "ok": true
+          },
+          "probe": {
+            "probe_source": "ffmpeg_fallback",
+            "size_bytes": 581145,
+            "duration": 17.91,
+            "video_codec": "h264",
+            "width": 720,
+            "height": 1280,
+            "audio_codec": "aac",
+            "sample_rate": 48000,
+            "channels": 2,
+            "audio_streams": 1,
+            "fps": 30.0,
+            "bitrate_kbps": 259,
+            "container": "mov",
+            "video_duration": 17.91,
+            "audio_duration": 17.91
+          },
+          "loudness": {
+            "integrated_lufs": -16.0,
+            "true_peak_dbfs": null,
+            "lra_lu": 1.9
+          },
+          "cues": 12,
+          "crop": {
+            "mode": "center",
+            "x": 0.3418,
+            "y": 0.0,
+            "w": 0.3164,
+            "h": 1.0
+          }
+        },
+        "16:9": {
+          "status": "succeeded",
+          "wall_sec": 0.94,
+          "peak_rss_mb": 372,
+          "error": null,
+          "validation": {
+            "exists": true,
+            "resolution_ok": true,
+            "video_codec_h264": true,
+            "audio_codec_aac": true,
+            "duration_ok": true,
+            "audio_present": true,
+            "size_ok": true,
+            "av_sync_ok": true,
+            "ok": true
+          },
+          "probe": {
+            "probe_source": "ffmpeg_fallback",
+            "size_bytes": 505014,
+            "duration": 17.91,
+            "video_codec": "h264",
+            "width": 1280,
+            "height": 720,
+            "audio_codec": "aac",
+            "sample_rate": 48000,
+            "channels": 2,
+            "audio_streams": 1,
+            "fps": 30.0,
+            "bitrate_kbps": 225,
+            "container": "mov",
+            "video_duration": 17.91,
+            "audio_duration": 17.91
+          },
+          "loudness": {
+            "integrated_lufs": -16.0,
+            "true_peak_dbfs": null,
+            "lra_lu": 1.9
+          },
+          "cues": 12,
+          "crop": {
+            "mode": "center",
+            "x": 0.0,
+            "y": 0.0,
+            "w": 1.0,
+            "h": 1.0
+          }
+        },
+        "1:1": {
+          "status": "succeeded",
+          "wall_sec": 0.77,
+          "peak_rss_mb": 298,
+          "error": null,
+          "validation": {
+            "exists": true,
+            "resolution_ok": true,
+            "video_codec_h264": true,
+            "audio_codec_aac": true,
+            "duration_ok": true,
+            "audio_present": true,
+            "size_ok": true,
+            "av_sync_ok": true,
+            "ok": true
+          },
+          "probe": {
+            "probe_source": "ffmpeg_fallback",
+            "size_bytes": 431685,
+            "duration": 17.91,
+            "video_codec": "h264",
+            "width": 720,
+            "height": 720,
+            "audio_codec": "aac",
+            "sample_rate": 48000,
+            "channels": 2,
+            "audio_streams": 1,
+            "fps": 30.0,
+            "bitrate_kbps": 192,
+            "container": "mov",
+            "video_duration": 17.91,
+            "audio_duration": 17.91
+          },
+          "loudness": {
+            "integrated_lufs": -16.0,
+            "true_peak_dbfs": null,
+            "lra_lu": 1.9
+          },
+          "cues": 12,
+          "crop": {
+            "mode": "left",
+            "x": 0.0,
+            "y": 0.0,
+            "w": 0.5625,
+            "h": 1.0
+          }
+        }
+      }
+    },
+    {
+      "id": "B6-BATCH",
+      "name": "Batch export with per-item manifest",
+      "status": "PASS",
+      "checks": {
+        "job_status": "succeeded",
+        "requested": 2,
+        "exported": 2,
+        "files_listed": 2,
+        "manifest": true
+      },
+      "metrics": {
+        "wall_sec": 1.83,
+        "peak_rss_mb": 377
+      },
+      "notes": "",
+      "evidence": {
+        "items": [
+          {
+            "candidate_id": "3121eb1d-a38e-4475-92c4-16ed44a2978c",
+            "file": "/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/clip_projects/5ca18837-4c39-46f7-8e24-1139ef87ab72/exports/01_Most-people-try-to-build-better-habits-b_9x16.mp4",
+            "aspect": "9:16",
+            "duration": 17.91,
+            "size_bytes": 358741,
+            "validation": {
+              "exists": true,
+              "resolution_ok": true,
+              "video_codec_h264": true,
+              "audio_codec_aac": true,
+              "duration_ok": true,
+              "audio_present": true,
+              "size_ok": true,
+              "av_sync_ok": true,
+              "ok": true
+            },
+            "loudness": {
+              "integrated_lufs": -16.0,
+              "true_peak_dbfs": null,
+              "lra_lu": 1.9
+            },
+            "title": "Most people try to build better habits by relying on",
+            "hook": "Most people try to build better habits by relying on motivation, and that is the first",
+            "hashtags": [
+              "#motivation",
+              "#feelings",
+              "#example",
+              "#feeling",
+              "#mistake"
+            ],
+            "start": 0.0,
+            "end": 17.89,
+            "category": "motivational",
+            "error": null
+          },
+          {
+            "candidate_id": "0e6e2ca6-ac6b-4401-a026-1785d06ca279",
+            "file": "/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/clip_projects/5ca18837-4c39-46f7-8e24-1139ef87ab72/exports/02_Why-does-this-work-so-well_9x16.mp4",
+            "aspect": "9:16",
+            "duration": 16.84,
+            "size_bytes": 539945,
+            "validation": {
+              "exists": true,
+              "resolution_ok": true,
+              "video_codec_h264": true,
+              "audio_codec_aac": true,
+              "duration_ok": true,
+              "audio_present": true,
+              "size_ok": true,
+              "av_sync_ok": true,
+              "ok": true
+            },
+            "loudness": {
+              "integrated_lufs": -15.9,
+              "true_peak_dbfs": null,
+              "lra_lu": 2.6
+            },
+            "title": "Why does this work so well?",
+            "hook": "Why does this work so well?",
+            "hashtags": [
+              "#environment",
+              "#automatic",
+              "#designing",
+              "#willpower",
+              "#decision"
+            ],
+            "start": 18.24,
+            "end": 35.06,
+            "category": "question",
+            "error": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "B7-REOPEN",
+      "name": "Project persists transcript/clips/renders after reload",
+      "status": "PASS",
+      "checks": {
+        "clips": 2,
+        "transcript_present": true,
+        "rendered_clip_ids": [
+          "3121eb1d-a38e-4475-92c4-16ed44a2978c"
+        ],
+        "expected_rendered": [
+          "3121eb1d-a38e-4475-92c4-16ed44a2978c"
+        ],
+        "render_aspects": [
+          "16:9",
+          "1:1",
+          "9:16"
+        ]
+      },
+      "metrics": {},
+      "notes": "",
+      "evidence": {}
+    },
+    {
+      "id": "B8-VALIDATION",
+      "name": "Rejects unsupported container and inverted ranges",
+      "status": "PASS",
+      "checks": {
+        "unsupported_status": 415,
+        "inverted_range_status": 400
+      },
+      "metrics": {},
+      "notes": "",
+      "evidence": {}
+    },
+    {
+      "id": "B12-REPLACE",
+      "name": "New source replaces old source and clears stale clips/transcript",
+      "status": "PASS",
+      "checks": {
+        "conflict_without_flag": 409,
+        "replace_status": 200,
+        "replaced": {
+          "sources": 1,
+          "clips": 2
+        },
+        "clips_after": 0,
+        "transcript_after": false
+      },
+      "metrics": {},
+      "notes": "",
+      "evidence": {}
+    },
+    {
+      "id": "B9-CANCEL",
+      "name": "Cancel during real analysis",
+      "status": "PASS",
+      "checks": {
+        "terminal_status": "succeeded",
+        "crash": false
+      },
+      "metrics": {
+        "wall_sec": 0.81,
+        "peak_rss_mb": 59
+      },
+      "notes": "Job finished before the cancel checkpoint; not a crash.",
+      "evidence": {}
+    },
+    {
+      "id": "B10-RECOVERY",
+      "name": "Restart marks in-flight clip job interrupted",
+      "status": "PASS",
+      "checks": {
+        "marked": 1,
+        "status": "interrupted"
+      },
+      "metrics": {},
+      "notes": "",
+      "evidence": {}
+    },
+    {
+      "id": "B11-ENGINE-A",
+      "name": "Engine A tables/endpoints untouched",
+      "status": "PASS",
+      "checks": {
+        "engine_a_jobs_present": true
+      },
+      "metrics": {},
+      "notes": "Engine A regression itself is verified separately by the benchmark suite.",
+      "evidence": {}
+    }
+  ],
+  "summary": {
+    "total": 15,
+    "pass": 14,
+    "warning": 0,
+    "fail": 0,
+    "not_run": 1,
+    "overall_status": "WARNING"
+  },
+  "wall_sec": 18.66,
+  "note": "Only executed checks are PASS/FAIL. Missing prerequisites are NOT_RUN. Source media is synthetic local TTS over an FFmpeg colour video; timings in the imported SRT come from measured speech durations."
+}

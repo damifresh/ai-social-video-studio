@@ -209,3 +209,205 @@ export function fmtBytes(n?: number | null): string {
   if (n > 1024 ** 2) return `${(n / 1024 ** 2).toFixed(1)} MB`;
   return `${(n / 1024).toFixed(0)} KB`;
 }
+
+// ---------------------------------------------------------------------------
+// Engine B (AI Auto-Clip Studio)
+// ---------------------------------------------------------------------------
+
+export type ClipJobT = {
+  id: string;
+  clip_project_id: string;
+  type: string;
+  stage: string;
+  status: string;
+  progress: number;
+  message: string;
+  error?: string | null;
+  canceled: boolean;
+  peak_memory_mb: number;
+  meta?: any;
+  created_at?: string | null;
+  started_at?: string | null;
+  finished_at?: string | null;
+};
+
+export type ClipSourceT = {
+  id: string;
+  original_name: string;
+  ext: string;
+  sha256: string;
+  size_bytes: number;
+  duration_sec: number;
+  width: number;
+  height: number;
+  fps: number;
+  vcodec: string;
+  acodec: string;
+  audio_streams: number;
+  sample_rate: number;
+  channels: number;
+  probe?: any;
+  created_at?: string | null;
+  url: string;
+};
+
+export type ClipEditT = {
+  aspect?: string;
+  preset?: string;
+  crop?: { mode?: string; x?: number; y?: number; w?: number; h?: number } | null;
+  caption_style?: Record<string, any>;
+  audio?: { normalize?: boolean; music?: string | null; music_volume?: number };
+  burn_captions?: boolean;
+  fps?: number;
+};
+
+export type ClipRenderT = {
+  id: string;
+  aspect_ratio: string;
+  preset: string;
+  duration_sec: number;
+  size_bytes: number;
+  state: string;
+  probe?: any;
+  url: string;
+};
+
+export type ClipCandidateT = {
+  id: string;
+  clip_project_id: string;
+  start_sec: number;
+  end_sec: number;
+  duration_sec: number;
+  transcript_text: string;
+  title: string;
+  hook: string;
+  category: string;
+  score: number;
+  score_json?: {
+    components?: Record<string, { raw: number; weight: number; contribution: number }>;
+    metrics?: Record<string, any>;
+    weights?: Record<string, number>;
+    params?: any;
+  } | null;
+  reason: string;
+  selected: boolean;
+  state: string;
+  edit: ClipEditT;
+  renders: ClipRenderT[];
+};
+
+export type ClipProjectT = {
+  id: string;
+  title: string;
+  status: string;
+  aspect_ratio: string;
+  preset: string;
+  language: string;
+  settings: Record<string, any>;
+  error?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  source: ClipSourceT | null;
+  counts: { clips: number; rendered: number };
+  transcript: { present: boolean; backend?: string | null; timing?: string | null; sentences?: number } | null;
+  analysis_ready: boolean;
+};
+
+export type ClipCapabilitiesT = {
+  asr: {
+    backend: string;
+    available: boolean;
+    bin?: string | null;
+    model?: string | null;
+    reasons: string[];
+    manual_import: boolean;
+    note: string;
+  };
+  manual_transcript: boolean;
+  aspects: string[];
+  presets: Record<string, { label: string; aspect: string }>;
+  crop_modes: { id: string; label: string }[];
+  durations: number[];
+  diagnostics: { ffmpeg: string; ffprobe_standalone: boolean; note: string };
+};
+
+export type ClipProjectDetailT = {
+  project: ClipProjectT;
+  transcript: any | null;
+  analysis: { silence_gaps: number; scene_cuts: number; envelope_windows: number; created_at?: string } | null;
+  capabilities: ClipCapabilitiesT['asr'];
+  jobs: ClipJobT[];
+  clips: ClipCandidateT[];
+  music: { name: string; path: string; url: string }[];
+};
+
+async function clipUpload(path: string, file: File) {
+  const fd = new FormData();
+  fd.append('file', file);
+  const r = await fetch(BASE + path, { method: 'POST', body: fd });
+  if (!r.ok) {
+    let detail = r.statusText;
+    try {
+      const t = await r.text();
+      try {
+        detail = JSON.parse(t).detail || t;
+      } catch {
+        detail = t || detail;
+      }
+    } catch {
+      /* ignore */
+    }
+    throw new Error(`${r.status} ${detail}`);
+  }
+  return r.json();
+}
+
+export const clipApi = {
+  capabilities: () => req<ClipCapabilitiesT>('/api/clip/capabilities'),
+  diagnostics: () => req<any>('/api/clip/diagnostics'),
+  projects: () => req<{ projects: ClipProjectT[] }>('/api/clip/projects'),
+  project: (id: string) => req<ClipProjectDetailT>(`/api/clip/projects/${id}`),
+  createProject: (body: { title?: string; aspect_ratio?: string; preset?: string; language?: string }) =>
+    req<{ project: ClipProjectT }>('/api/clip/projects', { method: 'POST', body: JSON.stringify(body) }),
+  updateProject: (id: string, body: any) =>
+    req<{ project: ClipProjectT }>(`/api/clip/projects/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deleteProject: (id: string, deleteFiles = true) =>
+    req(`/api/clip/projects/${id}?delete_files=${deleteFiles}`, { method: 'DELETE' }),
+  uploadSource: (id: string, file: File, replace = true) =>
+    clipUpload(`/api/clip/projects/${id}/source?replace_existing=${replace}`, file),
+  sourceUrl: (id: string) => `/api/clip/projects/${id}/source/file`,
+  analyze: (id: string) => req<{ job: ClipJobT }>(`/api/clip/projects/${id}/analyze`, { method: 'POST' }),
+  transcribe: (id: string) => req<{ job: ClipJobT }>(`/api/clip/projects/${id}/transcribe`, { method: 'POST' }),
+  transcript: (id: string) => req<{ transcript: any; capability: any }>(`/api/clip/projects/${id}/transcript`),
+  importTranscript: (id: string, content: string, filename = '') =>
+    req<{ transcript: any }>(`/api/clip/projects/${id}/transcript/import`, {
+      method: 'POST',
+      body: JSON.stringify({ content, filename }),
+    }),
+  saveTranscript: (id: string, segments: { start: number; end: number; text: string }[]) =>
+    req<{ transcript: any }>(`/api/clip/projects/${id}/transcript`, {
+      method: 'PUT',
+      body: JSON.stringify({ segments }),
+    }),
+  highlights: (id: string, durations: number[], count: number) =>
+    req<{ job: ClipJobT }>(`/api/clip/projects/${id}/highlights`, {
+      method: 'POST',
+      body: JSON.stringify({ durations, count }),
+    }),
+  clips: (id: string) => req<{ clips: ClipCandidateT[] }>(`/api/clip/projects/${id}/clips`),
+  patchClip: (cid: string, body: any) => req<{ clip: ClipCandidateT }>(`/api/clip/clips/${cid}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deleteClip: (cid: string) => req(`/api/clip/clips/${cid}`, { method: 'DELETE' }),
+  regenerateMetadata: (cid: string) => req<{ copy: any }>(`/api/clip/clips/${cid}/metadata`, { method: 'POST' }),
+  renderClip: (cid: string, body: any) => req<{ job: ClipJobT }>(`/api/clip/clips/${cid}/render`, { method: 'POST', body: JSON.stringify(body) }),
+  exportBatch: (id: string, candidateIds?: string[], aspect?: string) =>
+    req<{ job: ClipJobT; requested: number }>(`/api/clip/projects/${id}/export-batch`, {
+      method: 'POST',
+      body: JSON.stringify({ candidate_ids: candidateIds, aspect }),
+    }),
+  clipFileUrl: (cid: string, aspect?: string) => `/api/clip/clips/${cid}/file${aspect ? `?aspect=${aspect}` : ''}`,
+  exports: (id: string) =>
+    req<{ files: { name: string; size_bytes: number; url: string }[]; manifest: any }>(`/api/clip/projects/${id}/exports`),
+  jobs: (id: string) => req<{ jobs: ClipJobT[] }>(`/api/clip/projects/${id}/jobs`),
+  job: (jid: string) => req<{ job: ClipJobT }>(`/api/clip/jobs/${jid}`),
+  cancelJob: (jid: string) => req<{ job: ClipJobT }>(`/api/clip/jobs/${jid}/cancel`, { method: 'POST' }),
+};

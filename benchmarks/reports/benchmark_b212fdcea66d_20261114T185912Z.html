@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Benchmark Report b212fdcea66d</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#020617;color:#e2e8f0;margin:0;padding:24px;line-height:1.5}
+.card{background:#0b1220;border:1px solid #1e293b;border-radius:12px;padding:16px;margin:14px 0}
+h1,h2,h3{margin:0 0 10px 0} h1{font-size:24px} h2{font-size:18px;color:#93c5fd} h3{font-size:15px;color:#cbd5e1}
+.muted{color:#94a3b8} .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.kv{background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:10px} .k{font-size:11px;color:#94a3b8;text-transform:uppercase} .v{font-size:14px;margin-top:2px}
+</style></head><body>
+<h1>M2 Hardware Benchmark Report</h1>
+<div class="muted">Run ID: b212fdcea66d · Generated: 20261114T185912Z · Suite: m2_hardware_benchmark_baseline · Status: <span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#475569;color:#fff;font-size:12px;font-weight:600">completed</span></div>
+
+<div class="card"><h2>1. Hardware Configuration</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;processor&quot;: &quot;Apple M2&quot;,
+  &quot;machine&quot;: &quot;arm64&quot;,
+  &quot;cpu_logical&quot;: 8,
+  &quot;memory_bytes&quot;: 8589934592,
+  &quot;memory_gb&quot;: 8.0
+}</pre></div>
+<div class="card"><h2>2. Software and Model Versions</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;app_version&quot;: &quot;1.0.0&quot;,
+  &quot;python&quot;: &quot;3.11.18&quot;,
+  &quot;platform&quot;: &quot;macOS-27.0.1-arm64-arm-64bit&quot;,
+  &quot;macos_version&quot;: &quot;27.0.1&quot;,
+  &quot;sw_vers&quot;: &quot;ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434&quot;,
+  &quot;ffmpeg_path&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/backend/.venv/lib/python3.11/site-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1&quot;,
+  &quot;ffprobe_path&quot;: &quot;ffprobe&quot;,
+  &quot;ffmpeg_version&quot;: &quot;ffmpeg version 7.1 Copyright (c) 2000-2024 the FFmpeg developers&quot;,
+  &quot;ffprobe_version&quot;: &quot;&quot;,
+  &quot;imageio_ffmpeg&quot;: &quot;0.6.0&quot;,
+  &quot;engines&quot;: {
+    &quot;say&quot;: true,
+    &quot;kokoro&quot;: false,
+    &quot;kokoro_hint&quot;: &quot;Install kokoro-mlx or mlx-audio in a Python 3.10-3.12 environment&quot;,
+    &quot;whisper&quot;: false,
+    &quot;whisper_bin&quot;: null,
+    &quot;whisper_model&quot;: null,
+    &quot;ffmpeg&quot;: &quot;ffmpeg-macos-aarch64-v7.1&quot;,
+    &quot;diffusion_video&quot;: false
+  },
+  &quot;git&quot;: {
+    &quot;commit&quot;: &quot;f629237f68f3b7e0fdd23b4c7b22ed2022568aef&quot;,
+    &quot;short&quot;: &quot;f629237&quot;,
+    &quot;date&quot;: &quot;2026-11-14T19:31:39+01:00&quot;,
+    &quot;dirty&quot;: true
+  }
+}</pre><h3>Config / Models / FFmpeg / Acceleration</h3><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;config&quot;: {
+    &quot;sequential_jobs&quot;: true,
+    &quot;target_resolution&quot;: &quot;720p&quot;,
+    &quot;data_dir&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data&quot;,
+    &quot;models_dir&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/models&quot;,
+    &quot;assets_dir&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/assets&quot;,
+    &quot;ffmpeg&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/backend/.venv/lib/python3.11/site-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1&quot;
+  },
+  &quot;disk_at_capture&quot;: {
+    &quot;total_gb&quot;: 460.43,
+    &quot;free_gb&quot;: 147.7,
+    &quot;used_gb&quot;: 312.73
+  }
+}</pre></div>
+<div class="card"><h2>3. Test Methodology</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;approach&quot;: &quot;Run actual Engine A (AI Video Creator) generation jobs sequentially via the existing pipeline, sample host/app metrics during execution, and validate exports with ffprobe.&quot;,
+  &quot;sampling_interval_sec_default&quot;: 1.0,
+  &quot;metrics_sources&quot;: {
+    &quot;cpu&quot;: &quot;psutil.cpu_percent&quot;,
+    &quot;app_memory&quot;: &quot;psutil process-tree RSS&quot;,
+    &quot;system_memory&quot;: &quot;psutil.virtual_memory&quot;,
+    &quot;swap&quot;: &quot;psutil.swap_memory&quot;,
+    &quot;memory_pressure&quot;: &quot;macOS memory_pressure (best-effort, system-wide)&quot;,
+    &quot;disk&quot;: &quot;shutil.disk_usage&quot;,
+    &quot;gpu_metal&quot;: &quot;not reliably available without privileged powermetrics (reported, not fabricated)&quot;
+  },
+  &quot;repeatability&quot;: &quot;Fixed per-case config recorded in each test; background workload not strictly isolated.&quot;,
+  &quot;engines_in_scope&quot;: [
+    &quot;AI_VIDEO_CREATOR&quot;
+  ],
+  &quot;engines_out_of_scope&quot;: [
+    &quot;AI_AUTO_CLIP_STUDIO (not implemented)&quot;
+  ]
+}</pre></div>
+<div class="card"><h2>Summary</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;overall_status&quot;: &quot;PASS&quot;,
+  &quot;total&quot;: 3,
+  &quot;pass&quot;: 3,
+  &quot;warning&quot;: 0,
+  &quot;fail&quot;: 0,
+  &quot;measurement_sources&quot;: {
+    &quot;cpu&quot;: &quot;psutil.cpu_percent&quot;,
+    &quot;app_memory&quot;: &quot;psutil process-tree RSS&quot;,
+    &quot;system_memory&quot;: &quot;psutil.virtual_memory&quot;,
+    &quot;swap&quot;: &quot;psutil.swap_memory&quot;,
+    &quot;memory_pressure&quot;: &quot;macOS memory_pressure (best-effort, system-wide)&quot;,
+    &quot;disk&quot;: &quot;shutil.disk_usage&quot;,
+    &quot;gpu_metal&quot;: &quot;not reliably available without privileged powermetrics (reported, not fabricated)&quot;
+  },
+  &quot;report_note&quot;: &quot;Measured results only; unimplemented/unavailable tests recorded as NOT_RUN/NOT_IMPLEMENTED.&quot;
+}</pre></div>
+<div class="card"><h2>4-8. Results (AI Auto-Clip, Transcription, Highlight, Export, AI Video Creator)</h2>
+<table style='width:100%;border-collapse:collapse;font-size:13px'><thead><tr><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Test ID</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Engine</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Name</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Status</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Time (s)</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Peak App RSS (MB)</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Notes</th></tr></thead><tbody><tr><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>VC-30S</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>AI_VIDEO_CREATOR</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>Video Creator 30s (0.5 min target) 16:9</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'><span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#16a34a;color:#fff;font-size:12px;font-weight:600">PASS</span></td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'></td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>728.5</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>Completed and export validated.</td></tr><tr><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>VC-60S</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>AI_VIDEO_CREATOR</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>Video Creator 60s target 16:9</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'><span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#16a34a;color:#fff;font-size:12px;font-weight:600">PASS</span></td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'></td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>736.7</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>Completed and export validated.</td></tr><tr><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>VC-3M</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>AI_VIDEO_CREATOR</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>Video Creator 3-minute target 16:9</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'><span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#16a34a;color:#fff;font-size:12px;font-weight:600">PASS</span></td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'></td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>739.5</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>Completed and export validated.</td></tr></tbody></table>
+<h3>AI Auto-Clip Results</h3><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;status&quot;: &quot;NOT_IMPLEMENTED&quot;,
+  &quot;reason&quot;: &quot;Engine B (AI Auto-Clip Studio) is not present in this codebase (no import/upload, proxy, transcription pipeline, highlight extraction, clip render/subtitle workflow, or UI/API).&quot;,
+  &quot;tests&quot;: [
+    {
+      &quot;id&quot;: &quot;A1&quot;,
+      &quot;duration&quot;: &quot;1 min&quot;,
+      &quot;status&quot;: &quot;NOT_RUN&quot;,
+      &quot;reason&quot;: &quot;Not implemented in this application build; no fabricated measurements.&quot;
+    },
+    {
+      &quot;id&quot;: &quot;A2&quot;,
+      &quot;duration&quot;: &quot;5 min&quot;,
+      &quot;status&quot;: &quot;NOT_RUN&quot;,
+      &quot;reason&quot;: &quot;Not implemented in this application build; no fabricated measurements.&quot;
+    },
+    {
+      &quot;id&quot;: &quot;A3&quot;,
+      &quot;duration&quot;: &quot;15 min&quot;,
+      &quot;status&quot;: &quot;NOT_RUN&quot;,
+      &quot;reason&quot;: &quot;Not implemented in this application build; no fabricated measurements.&quot;
+    },
+    {
+      &quot;id&quot;: &quot;A4&quot;,
+      &quot;duration&quot;: &quot;30 min&quot;,
+      &quot;status&quot;: &quot;NOT_RUN&quot;,
+      &quot;reason&quot;: &quot;Not implemented in this application build; no fabricated measurements.&quot;
+    },
+    {
+      &quot;id&quot;: &quot;A5&quot;,
+      &quot;duration&quot;: &quot;60 min&quot;,
+      &quot;status&quot;: &quot;NOT_RUN&quot;,
+      &quot;reason&quot;: &quot;Not implemented in this application build; no fabricated measurements.&quot;
+    }
+  ]
+}</pre>
+<h3>Transcription Accuracy</h3><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;status&quot;: &quot;NOT_RUN&quot;,
+  &quot;reason&quot;: &quot;Whisper.cpp Tiny/Base binaries/models and manually verified ground-truth transcripts/reference audio-video datasets are not installed/provided in this environment; WER and alignment accuracy cannot be honestly computed.&quot;,
+  &quot;models_tested&quot;: []
+}</pre>
+<h3>Highlight Quality</h3><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;status&quot;: &quot;NOT_RUN&quot;,
+  &quot;reason&quot;: &quot;No AI highlight extraction engine, no human-reviewed reference highlight set, and no human reviewer ratings collected; precision/recall/quality scores cannot be fabricated.&quot;
+}</pre>
+<h3>Export Quality</h3><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;engine_a&quot;: {
+    &quot;status&quot;: &quot;PASS&quot;,
+    &quot;validations&quot;: [
+      {
+        &quot;ok&quot;: true,
+        &quot;checks&quot;: [
+          {
+            &quot;name&quot;: &quot;file_exists&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: null
+          },
+          {
+            &quot;name&quot;: &quot;probe_valid&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: null
+          },
+          {
+            &quot;name&quot;: &quot;has_video_stream&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: &quot;h264&quot;
+          },
+          {
+            &quot;name&quot;: &quot;has_audio_stream&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: &quot;aac&quot;
+          },
+          {
+            &quot;name&quot;: &quot;video_codec_h264&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: &quot;h264&quot;
+          },
+          {
+            &quot;name&quot;: &quot;audio_codec_aac&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: &quot;aac&quot;
+          },
+          {
+            &quot;name&quot;: &quot;resolution_720p_target&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: {
+              &quot;width&quot;: 1280,
+              &quot;height&quot;: 720,
+              &quot;target&quot;: 720
+            }
+          },
+          {
+            &quot;name&quot;: &quot;aspect_ratio&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: {
+              &quot;actual&quot;: 1.7778,
+              &quot;expected&quot;: &quot;16:9&quot;
+            }
+          },
+          {
+            &quot;name&quot;: &quot;duration_positive&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: 69.8
+          },
+          {
+            &quot;name&quot;: &quot;file_size_positive&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: 5058347
+          },
+          {
+            &quot;name&quot;: &quot;valid_mp4_container&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: &quot;mov,mp4,m4a,3gp,3g2,mj2&quot;
+          }
+        ],
+        &quot;probe&quot;: {
+          &quot;exists&quot;: true,
+          &quot;path&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/226ac575-fd5f-4f53-87bc-37075eaf87ca/renders/final_16x9_720p.mp4&quot;,
+          &quot;valid&quot;: true,
+          &quot;source&quot;: &quot;ffmpeg_fallback&quot;,
+          &quot;container&quot;: &quot;mov,mp4,m4a,3gp,3g2,mj2&quot;,
+          &quot;duration_sec&quot;: 69.8,
+          &quot;size_bytes&quot;: 5058347,
+          &quot;bit_rate&quot;: &quot;579000&quot;,
+          &quot;video&quot;: {
+            &quot;codec&quot;: &quot;h264&quot;,
+            &quot;width&quot;: 1280,
+            &quot;height&quot;: 720,
+            &quot;pix_fmt&quot;: &quot;yuv420p(progressive)&quot;,
+            &quot;avg_frame_rate&quot;: &quot;30.0&quot;
+          },
+          &quot;audio&quot;: {
+            &quot;codec&quot;: &quot;aac&quot;,
+            &quot;sample_rate&quot;: 48000,
+            &quot;channels&quot;: 2
+          },
+          &quot;probe_info&quot;: {
+            &quot;duration&quot;: 69.8,
+            &quot;video_codec&quot;: &quot;h264 (High) (avc1 / 0x31637661)&quot;,
+            &quot;pix_fmt&quot;: &quot;yuv420p(progressive)&quot;,
+            &quot;width&quot;: 1280,
+            &quot;height&quot;: 720,
+            &quot;audio_codec&quot;: &quot;aac (LC) (mp4a / 0x6134706D)&quot;,
+            &quot;sample_rate&quot;: 48000,
+            &quot;fps&quot;: 30.0,
+            &quot;bitrate_kbps&quot;: 579,
+            &quot;size_bytes&quot;: 5058347
+          }
+        }
+      },
+      {
+        &quot;ok&quot;: true,
+        &quot;checks&quot;: [
+          {
+            &quot;name&quot;: &quot;file_exists&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: null
+          },
+          {
+            &quot;name&quot;: &quot;probe_valid&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: null
+          },
+          {
+            &quot;name&quot;: &quot;has_video_stream&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: &quot;h264&quot;
+          },
+          {
+            &quot;name&quot;: &quot;has_audio_stream&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: &quot;aac&quot;
+          },
+          {
+            &quot;name&quot;: &quot;video_codec_h264&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: &quot;h264&quot;
+          },
+          {
+            &quot;name&quot;: &quot;audio_codec_aac&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: &quot;aac&quot;
+          },
+          {
+            &quot;name&quot;: &quot;resolution_720p_target&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: {
+              &quot;width&quot;: 1280,
+              &quot;height&quot;: 720,
+              &quot;target&quot;: 720
+            }
+          },
+          {
+            &quot;name&quot;: &quot;aspect_ratio&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: {
+              &quot;actual&quot;: 1.7778,
+              &quot;expected&quot;: &quot;16:9&quot;
+            }
+          },
+          {
+            &quot;name&quot;: &quot;duration_positive&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: 69.49
+          },
+          {
+            &quot;name&quot;: &quot;file_size_positive&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: 4800122
+          },
+          {
+            &quot;name&quot;: &quot;valid_mp4_container&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: &quot;mov,mp4,m4a,3gp,3g2,mj2&quot;
+          }
+        ],
+        &quot;probe&quot;: {
+          &quot;exists&quot;: true,
+          &quot;path&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/98d25b99-408d-49c3-9b11-d3072b187f70/renders/final_16x9_720p.mp4&quot;,
+          &quot;valid&quot;: true,
+          &quot;source&quot;: &quot;ffmpeg_fallback&quot;,
+          &quot;container&quot;: &quot;mov,mp4,m4a,3gp,3g2,mj2&quot;,
+          &quot;duration_sec&quot;: 69.49,
+          &quot;size_bytes&quot;: 4800122,
+          &quot;bit_rate&quot;: &quot;552000&quot;,
+          &quot;video&quot;: {
+            &quot;codec&quot;: &quot;h264&quot;,
+            &quot;width&quot;: 1280,
+            &quot;height&quot;: 720,
+            &quot;pix_fmt&quot;: &quot;yuv420p(progressive)&quot;,
+            &quot;avg_frame_rate&quot;: &quot;30.0&quot;
+          },
+          &quot;audio&quot;: {
+            &quot;codec&quot;: &quot;aac&quot;,
+            &quot;sample_rate&quot;: 48000,
+            &quot;channels&quot;: 2
+          },
+          &quot;probe_info&quot;: {
+            &quot;duration&quot;: 69.49,
+            &quot;video_codec&quot;: &quot;h264 (High) (avc1 / 0x31637661)&quot;,
+            &quot;pix_fmt&quot;: &quot;yuv420p(progressive)&quot;,
+            &quot;width&quot;: 1280,
+            &quot;height&quot;: 720,
+            &quot;audio_codec&quot;: &quot;aac (LC) (mp4a / 0x6134706D)&quot;,
+            &quot;sample_rate&quot;: 48000,
+            &quot;fps&quot;: 30.0,
+            &quot;bitrate_kbps&quot;: 552,
+            &quot;size_bytes&quot;: 4800122
+          }
+        }
+      },
+      {
+        &quot;ok&quot;: true,
+        &quot;checks&quot;: [
+          {
+            &quot;name&quot;: &quot;file_exists&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: null
+          },
+          {
+            &quot;name&quot;: &quot;probe_valid&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: null
+          },
+          {
+            &quot;name&quot;: &quot;has_video_stream&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: &quot;h264&quot;
+          },
+          {
+            &quot;name&quot;: &quot;has_audio_stream&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: &quot;aac&quot;
+          },
+          {
+            &quot;name&quot;: &quot;video_codec_h264&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: &quot;h264&quot;
+          },
+          {
+            &quot;name&quot;: &quot;audio_codec_aac&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: &quot;aac&quot;
+          },
+          {
+            &quot;name&quot;: &quot;resolution_720p_target&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: {
+              &quot;width&quot;: 1280,
+              &quot;height&quot;: 720,
+              &quot;target&quot;: 720
+            }
+          },
+          {
+            &quot;name&quot;: &quot;aspect_ratio&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: {
+              &quot;actual&quot;: 1.7778,
+              &quot;expected&quot;: &quot;16:9&quot;
+            }
+          },
+          {
+            &quot;name&quot;: &quot;duration_positive&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: 180.53
+          },
+          {
+            &quot;name&quot;: &quot;file_size_positive&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: 12104673
+          },
+          {
+            &quot;name&quot;: &quot;valid_mp4_container&quot;,
+            &quot;ok&quot;: true,
+            &quot;detail&quot;: &quot;mov,mp4,m4a,3gp,3g2,mj2&quot;
+          }
+        ],
+        &quot;probe&quot;: {
+          &quot;exists&quot;: true,
+          &quot;path&quot;: &quot;/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/data/projects/63d2eced-8d7d-47bc-9f86-38f85fb48292/renders/final_16x9_720p.mp4&quot;,
+          &quot;valid&quot;: true,
+          &quot;source&quot;: &quot;ffmpeg_fallback&quot;,
+          &quot;container&quot;: &quot;mov,mp4,m4a,3gp,3g2,mj2&quot;,
+          &quot;duration_sec&quot;: 180.53,
+          &quot;size_bytes&quot;: 12104673,
+          &quot;bit_rate&quot;: &quot;536000&quot;,
+          &quot;video&quot;: {
+            &quot;codec&quot;: &quot;h264&quot;,
+            &quot;width&quot;: 1280,
+            &quot;height&quot;: 720,
+            &quot;pix_fmt&quot;: &quot;yuv420p(progressive)&quot;,
+            &quot;avg_frame_rate&quot;: &quot;30.0&quot;
+          },
+          &quot;audio&quot;: {
+            &quot;codec&quot;: &quot;aac&quot;,
+            &quot;sample_rate&quot;: 48000,
+            &quot;channels&quot;: 2
+          },
+          &quot;probe_info&quot;: {
+            &quot;duration&quot;: 180.53,
+            &quot;video_codec&quot;: &quot;h264 (High) (avc1 / 0x31637661)&quot;,
+            &quot;pix_fmt&quot;: &quot;yuv420p(progressive)&quot;,
+            &quot;width&quot;: 1280,
+            &quot;height&quot;: 720,
+            &quot;audio_codec&quot;: &quot;aac (LC) (mp4a / 0x6134706D)&quot;,
+            &quot;sample_rate&quot;: 48000,
+            &quot;fps&quot;: 30.0,
+            &quot;bitrate_kbps&quot;: 536,
+            &quot;size_bytes&quot;: 12104673
+          }
+        }
+      }
+    ]
+  },
+  &quot;engine_b&quot;: {
+    &quot;status&quot;: &quot;NOT_RUN&quot;,
+    &quot;reason&quot;: &quot;AI Auto-Clip Studio not implemented.&quot;
+  }
+}</pre>
+<h3>AI Video Creator Results</h3><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;tests&quot;: [
+    {
+      &quot;id&quot;: &quot;VC-30S&quot;,
+      &quot;name&quot;: &quot;Video Creator 30s (0.5 min target) 16:9&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;wall_time_sec&quot;: 17.004,
+      &quot;output_duration_sec&quot;: 69.8,
+      &quot;processing_speed_ratio&quot;: 0.2436,
+      &quot;peak_app_rss_mb&quot;: 728.5,
+      &quot;swap_used_mb_peak&quot;: 4656.7,
+      &quot;export_size_bytes&quot;: 5058347,
+      &quot;notes&quot;: &quot;Completed and export validated.&quot;
+    },
+    {
+      &quot;id&quot;: &quot;VC-60S&quot;,
+      &quot;name&quot;: &quot;Video Creator 60s target 16:9&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;wall_time_sec&quot;: 16.198,
+      &quot;output_duration_sec&quot;: 69.49,
+      &quot;processing_speed_ratio&quot;: 0.2331,
+      &quot;peak_app_rss_mb&quot;: 736.7,
+      &quot;swap_used_mb_peak&quot;: 4656.7,
+      &quot;export_size_bytes&quot;: 4800122,
+      &quot;notes&quot;: &quot;Completed and export validated.&quot;
+    },
+    {
+      &quot;id&quot;: &quot;VC-3M&quot;,
+      &quot;name&quot;: &quot;Video Creator 3-minute target 16:9&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;wall_time_sec&quot;: 40.724,
+      &quot;output_duration_sec&quot;: 180.53,
+      &quot;processing_speed_ratio&quot;: 0.2256,
+      &quot;peak_app_rss_mb&quot;: 739.5,
+      &quot;swap_used_mb_peak&quot;: 4840.2,
+      &quot;export_size_bytes&quot;: 12104673,
+      &quot;notes&quot;: &quot;Completed and export validated.&quot;
+    }
+  ]
+}</pre>
+</div>
+<div class="card"><h2>9. Memory Performance</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;peak_app_rss_mb_across_tests&quot;: 739.5,
+  &quot;peak_swap_used_mb_across_tests&quot;: 4840.2,
+  &quot;per_test&quot;: [
+    {
+      &quot;id&quot;: &quot;VC-30S&quot;,
+      &quot;peak_app_rss_mb&quot;: 728.5,
+      &quot;system_memory_percent_peak&quot;: 84.6,
+      &quot;swap_used_mb_peak&quot;: 4656.7,
+      &quot;memory_pressure_levels_seen&quot;: [
+        &quot;normal&quot;
+      ]
+    },
+    {
+      &quot;id&quot;: &quot;VC-60S&quot;,
+      &quot;peak_app_rss_mb&quot;: 736.7,
+      &quot;system_memory_percent_peak&quot;: 84.6,
+      &quot;swap_used_mb_peak&quot;: 4656.7,
+      &quot;memory_pressure_levels_seen&quot;: [
+        &quot;normal&quot;
+      ]
+    },
+    {
+      &quot;id&quot;: &quot;VC-3M&quot;,
+      &quot;peak_app_rss_mb&quot;: 739.5,
+      &quot;system_memory_percent_peak&quot;: 85.8,
+      &quot;swap_used_mb_peak&quot;: 4840.2,
+      &quot;memory_pressure_levels_seen&quot;: [
+        &quot;normal&quot;
+      ]
+    }
+  ],
+  &quot;note&quot;: &quot;App memory is process-tree RSS; system memory/swap are host-wide snapshots (not app-only).&quot;
+}</pre></div>
+<div class="card"><h2>10. Stability Results</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;completed_jobs&quot;: 3,
+  &quot;crashes_observed&quot;: 0,
+  &quot;failed_jobs&quot;: 0,
+  &quot;note&quot;: &quot;Baseline covers sequential Engine A runs. Repeated/cancel/restart/recovery stress matrix requires additional explicit test execution.&quot;
+}</pre></div>
+<div class="card"><h2>11. Bottleneck Analysis</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>[
+  {
+    &quot;area&quot;: &quot;Narration-driven duration&quot;,
+    &quot;evidence&quot;: &quot;Output duration follows synthesized speech rate; 1-min targets can overshoot, affecting processing ratio.&quot;
+  }
+]</pre></div>
+<div class="card"><h2>12. Optimization Recommendations</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>[
+  {
+    &quot;config&quot;: &quot;Keep sequential job execution&quot;,
+    &quot;rationale&quot;: &quot;Measured memory peaks stayed within 8GB envelope; concurrency risks pressure.&quot;
+  },
+  {
+    &quot;config&quot;: &quot;Prefer shorter narration / tighter script for target duration&quot;,
+    &quot;rationale&quot;: &quot;Reduces TTS+render time and processing ratio.&quot;
+  },
+  {
+    &quot;config&quot;: &quot;Maintain disk-backed per-scene rendering&quot;,
+    &quot;rationale&quot;: &quot;Avoids in-memory timeline growth on long outputs.&quot;
+  },
+  {
+    &quot;config&quot;: &quot;Install/benchmark Whisper Tiny vs Base only with ground-truth data&quot;,
+    &quot;rationale&quot;: &quot;Cannot compare accuracy without reference transcripts.&quot;
+  }
+]</pre></div>
+<div class="card"><h2>13. Failed Tests</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>[]</pre></div>
+<div class="card"><h2>14. Known Limitations</h2><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>[
+  &quot;AI Auto-Clip Studio (Engine B) not implemented in this build.&quot;,
+  &quot;No Whisper.cpp Tiny/Base installed and no manually verified ground-truth transcripts; WER/alignment not measured.&quot;,
+  &quot;No human-reviewed highlight reference set or human ratings; highlight quality metrics not measured.&quot;,
+  &quot;GPU/Metal utilization not reliably sampled without privileged powermetrics; reported as unavailable.&quot;,
+  &quot;Output duration is narration-driven and may exceed nominal targets.&quot;,
+  &quot;Stress/recovery matrix (repeated runs, cancel mid-transcription/render, restart recovery across all scenarios) only partially covered unless explicitly executed.&quot;
+]</pre></div>
+<div class="card"><h2>15. Final Hardware Capability Assessment</h2>
+<table style='width:100%;border-collapse:collapse;font-size:13px'><thead><tr><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Engine</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Workload</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Classification</th><th style='text-align:left;padding:8px;border-bottom:1px solid #334155'>Notes</th></tr></thead><tbody><tr><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>AI_VIDEO_CREATOR</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>1-minute 720p generation</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'><span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#16a34a;color:#fff;font-size:12px;font-weight:600">FULLY_SUPPORTED</span></td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>Measured baseline pass/warning on this hardware with current animated-graphics pipeline and local TTS fallback.</td></tr><tr><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>AI_VIDEO_CREATOR</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>3-minute 720p generation</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'><span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#16a34a;color:#fff;font-size:12px;font-weight:600">FULLY_SUPPORTED</span></td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>Measured baseline pass/warning on this hardware with current animated-graphics pipeline and local TTS fallback.</td></tr><tr><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>AI_VIDEO_CREATOR</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>5-minute 720p generation</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'><span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#7c3aed;color:#fff;font-size:12px;font-weight:600">EXPERIMENTAL</span></td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>Not measured as passing in this baseline run.</td></tr><tr><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>AI_AUTO_CLIP_STUDIO</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>All auto-clip/transcription/highlight workloads</td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'><span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#dc2626;color:#fff;font-size:12px;font-weight:600">NOT_RECOMMENDED_ON_THIS_HARDWARE</span></td><td style='padding:8px;border-bottom:1px solid #1e293b;vertical-align:top'>Engine not implemented in this app; capability cannot be assessed from measured runs.</td></tr></tbody></table>
+<pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;engine_a&quot;: &quot;Measured baseline shows Engine A can generate 720p animated-graphics videos locally on M2 8GB in tested cases (see per-test status).&quot;,
+  &quot;engine_b&quot;: &quot;Engine B (AI Auto-Clip Studio) is not implemented; no auto-clip/transcription/highlight capability to classify from measurement.&quot;,
+  &quot;overall&quot;: &quot;PARTIAL \u2014 Engine A benchmarked with real runs; Engine B and requested auto-clip/transcription/highlight/accuracy datasets not available.&quot;
+}</pre>
+</div>
+<div class="card"><h2>Measurement Sources & Raw Samples (excerpt)</h2><p class="muted">Full run JSON contains all samples, logs references and test identifiers.</p><pre style='white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto'>{
+  &quot;measurement_sources&quot;: {
+    &quot;cpu&quot;: &quot;psutil.cpu_percent&quot;,
+    &quot;app_memory&quot;: &quot;psutil process-tree RSS&quot;,
+    &quot;system_memory&quot;: &quot;psutil.virtual_memory&quot;,
+    &quot;swap&quot;: &quot;psutil.swap_memory&quot;,
+    &quot;memory_pressure&quot;: &quot;macOS memory_pressure (best-effort, system-wide)&quot;,
+    &quot;disk&quot;: &quot;shutil.disk_usage&quot;,
+    &quot;gpu_metal&quot;: &quot;not reliably available without privileged powermetrics (reported, not fabricated)&quot;
+  },
+  &quot;sample_count&quot;: 0
+}</pre></div>
+</body></html>

@@ -5,12 +5,13 @@
 - **No 16/24/48 GB workflows.** All defaults must function (or degrade gracefully) within 8 GB.
 
 ## Implemented optimizations
-- **Sequential execution:** single background job at a time (`409` if a job is running). Stages run in order: script → storyboard → visuals → TTS → subtitles → audio mix → per-scene render → compose.
+- **Sequential execution:** single heavy job at a time across both engines (`409` if a job is running, whichever engine owns it). Engine A stages run in order: script → storyboard → visuals → TTS → subtitles → audio mix → per-scene render → compose.
 - **Disk-backed intermediates:** per-scene images, WAVs, MP4 segments, concat lists, SRT/VTT, and final render are written to `data/projects/<id>/` (never held as a full in-memory timeline).
 - **Per-scene rendering:** each scene is rendered to its own MP4 segment via FFmpeg, then concatenated and muxed with audio.
 - **Lazy/subprocess media work:** FFmpeg and `say` run as subprocesses; memory is reclaimed by the OS on exit.
 - **Conservative defaults:** 720p, 30 fps, deterministic script, macOS `say` narration fallback, animated-graphic visuals (PIL + zoompan), SRT-from-timings.
 - **Cleanup/resilience:** intermediates are preserved on failure for recovery/debugging; projects/assets are not deleted by failed renders.
+- **Engine B specifics:** streamed 4 MB uploads with running SHA-256 (no full-file buffering), 16 kHz mono audio extraction, 8 kHz envelope decode, 2 fps 320 px scene scan, per-render FFmpeg subprocess with `-progress` parsing, and `tmp/` cleaned on success and failure.
 
 ## Model-specific guidance
 | Component | 8 GB guidance |
@@ -33,6 +34,7 @@
 - **3-min 16:9:** 183.55 s output, 8.51 MB (earlier verified demo).
 - **5-min 16:9 (narration-driven 329.1 s, 15 scenes, 147 cues):** 21.44 MB, **peak 746 MB** sampled, generate 72.3 s — completed without OOM under memory pressure (~1.4 GB free / swap in use).
 - **Packaged desktop render:** 73.66 s output, 5.17 MB, peak 728 MB, successful through bundled Python/FFmpeg inside the `.app`.
+- **Engine B (67.52 s synthetic source, separate harness):** analysis 0.4 s / 79 MB peak; 44.14 s clip renders 2.41 s (9:16, 402 MB), 2.17 s (16:9, 376 MB), 1.85 s (1:1, 348 MB); batch of 2 in 2.84 s / 377 MB. Global memory was ~83.6 % during the run; no OOM.
 
 ## Current limitations (honest)
 
@@ -42,3 +44,6 @@
 - **Memory metric:** jobs report sampled process RSS peak; not a formal `/usr/bin/time -l` max-RSS measurement.
 - **Music/SFX:** bundled tracks are original procedural CC0 audio (`scripts/generate_assets.py`); add your own properly licensed files as needed.
 - **Desktop app:** unsigned (Gatekeeper override on first launch). Automated in-Electron UI click-through was not captured in this session.
+- **Engine B ASR:** whisper.cpp binary/model absent → transcription `NOT_RUN`; use SRT/VTT import or run `scripts/install_whisper_cpp.sh` (needs cmake + network once). No WER claim.
+- **Engine B long sources:** 5/15/30/60-minute sources and real-footage behaviour are untested; the measured source is 67.5 s. Analysis is linear-time and disk-backed, but memory/latency on hour-long files is unmeasured.
+- **Engine B tracking:** none. Crops are static geometry (centre/edges/manual rect), so a moving subject can leave frame.

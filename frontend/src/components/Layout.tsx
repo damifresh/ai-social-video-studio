@@ -5,6 +5,7 @@ import { useSystem } from '../lib/hooks';
 const NAV = [
   { to: '/', label: 'Dashboard', icon: 'M3 12l9-9 9 9M5 10v10h5v-6h4v6h5V10' },
   { to: '/new', label: 'New Project', icon: 'M12 5v14M5 12h14' },
+  { to: '/clip', label: 'Auto-Clip Studio', icon: 'M4 6h16M4 12h10M4 18h7M17 12l4 4-4 4' },
   { to: '/library', label: 'Asset Library', icon: 'M4 5h16v14H4zM4 9h16M9 5v14' },
   { to: '/exports', label: 'Export Center', icon: 'M12 3v12m0 0l-4-4m4 4l4-4M4 21h16' },
   { to: '/benchmark', label: 'M2 Benchmark', icon: 'M4 19h16M7 16V9m5 7V5m5 11v-4' },

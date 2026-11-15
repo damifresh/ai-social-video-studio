@@ -42,6 +42,9 @@ models/
 .idea/
 .vscode/
 
+# Local dev logs
+logs/
+
 # Env
 .env
 .env.*
@@ -54,6 +57,7 @@ models/
 
 # large project artifacts (kept locally, not versioned except samples metadata)
 data/studio.db
+data/clip_projects/
 data/projects/**/video/
 data/projects/**/renders/
 data/projects/**/audio/

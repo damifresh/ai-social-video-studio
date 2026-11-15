@@ -164,8 +164,17 @@ def _require_project(db: Session, pid: str) -> Project:
     return p
 
 
-def _running_job(db: Session) -> Job | None:
-    return db.query(Job).filter(Job.status.in_(["running", "queued"])).first()
+def _running_job(db: Session):
+    """First active heavy job across both engines (8 GB sequential guard)."""
+    job = db.query(Job).filter(Job.status.in_(["running", "queued"])).first()
+    if job:
+        return job
+    try:
+        from ..clip.models import ClipJob
+
+        return db.query(ClipJob).filter(ClipJob.status.in_(["running", "queued"])).first()
+    except Exception:
+        return None
 
 
 def _enqueue(db: Session, project: Project, job_type: str, message: str) -> Job:

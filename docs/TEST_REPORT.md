@@ -7,7 +7,7 @@
 **FFmpeg:** imageio-ffmpeg bundled **v7.1** arm64 (`ffmpeg-macos-aarch64-v7.1`), libass/sidechain/loudnorm available  
 **TTS (verified):** macOS `say` (e.g. Samantha), fully local/offline, ~174 wpm measured  
 **Kokoro MLX:** **not installed/verified** (adapter + fallback + metadata recording present)  
-**Whisper.cpp:** **not installed/verified** (timing-based SRT/VTT/ASS used)  
+**Whisper.cpp:** **not installed/verified** (Engine A uses timing-based SRT/VTT/ASS; Engine B gates ASR and imports SRT/VTT — no transcript is fabricated)  
 **Visuals:** animated graphics/stills (Pillow) + FFmpeg zoom/pan motion (**labeled**); diffusion/generated footage not enabled
 
 ## Acceptance criteria (1–12)
@@ -65,16 +65,17 @@ Dedicated benchmark instrumentation and dashboard added (`backend/app/benchmark/
 | `579bf2c90636` | VC-60S-9x16, VC-60S-1x1 | **PASS** | 9:16: 15.366 s, 67.43 s, peak 743.3 MB, 720×1280 valid. 1:1: 12.543 s, 65.96 s, peak 460.1 MB, 720×720 valid |
 | `8f20fe6de9f9` | STAB-CANCEL | **PASS** | cancel requested ~2.5 s into real run → `job_status=canceled`, wall 3.7 s, peak 91.8 MB, no crash |
 
-**Engine B (AI Auto-Clip Studio):** NOT_IMPLEMENTED (A1–A5, transcription WER/alignment, highlight quality/human ratings all NOT_RUN — no fabricated data). **GPU/Metal utilization:** not reliably sampled without privileged `powermetrics` (reported unavailable). **Max RSS (`/usr/bin/time -l`):** not captured (sampled process-tree RSS peaks used).
+**Engine B (AI Auto-Clip Studio):** implemented and measured separately with `scripts/engine_b_e2e.py` on 2026-11-15 — `benchmarks/data/engine_b/e2e_cb28b3f43d1f_20261115T080431Z.json`: **14 PASS / 0 FAIL / 1 NOT_RUN**, 31.64 s. Ingest of MP4/MOV/MKV/WebM with SHA-256 preservation, probing, analysis, SRT import, highlight scoring, three-aspect 720p renders (720×1280 / 1280×720 / 720×720, −16.0 LUFS, 28 cues), batch export with manifest, persistence, validation, cancellation, recovery and source replacement all passed. ASR remains **NOT_RUN** (no whisper.cpp binary/model), so no WER is claimed; the 5/15/30/60-minute matrix (A1–A5) is also **NOT_RUN**. Engine A regression after the change: `9bd9e75d5312` **PASS** (16.464 s wall, 69.49 s output, 725.9 MB peak). Details: [`TEST_REPORT_ENGINE_B.md`](TEST_REPORT_ENGINE_B.md). **GPU/Metal utilization:** not reliably sampled without privileged `powermetrics` (reported unavailable). **Max RSS (`/usr/bin/time -l`):** not captured (sampled process-tree RSS peaks used).
 
 ## Known gaps / limitations (honest)
 
-- **Kokoro MLX / Whisper.cpp** not installed or runtime-verified; macOS `say` + timing subtitles are the proven local path.
+- **Kokoro MLX / Whisper.cpp** not installed or runtime-verified; macOS `say` + timing subtitles are the proven local path. Engine B transcript import is verified; its ASR path is `NOT_RUN` and no WER is claimed.
+- **Engine B scope:** measured on a synthetic 67.5 s source; 5/15/30/60-minute sources, real-footage quality, human highlight ratings, packaged-app Engine B and automated browser click-through are **NOT_RUN**.
 - **Diffusion/generated footage** not enabled on 8 GB; visuals are animated graphics (labeled), not AI-generated video frames.
 - **Narration-driven duration:** output can exceed the nominal minute target (measured ~174 wpm). 5-min target produced 329 s.
 - **Memory metric:** sampled process peak RSS reported by jobs/benchmarks, not `/usr/bin/time -l` high-water mark.
 - **UI automation:** no automated click-through in a live browser/Electron session; API/pipeline, packaged health, and renders verified.
 - **App signing/notarization:** unsigned build (`identity: null`) — Gatekeeper override needed on first open.
 - **Auto-resume:** interrupted jobs are recoverable/re-runnable but not automatically resumed from the exact failed stage. Scene-regeneration recompose is implemented but not separately frame-diff validated in this report.
-- **Benchmark scope:** Engine B, Whisper WER/ground-truth, highlight reference/human evaluation, comparative optimization matrix (A–G), and extended stress matrix (5x1-min, 3x5-min, restart/reopen/after-fail timed runs) not fully executed — reported as NOT_IMPLEMENTED/NOT_RUN in benchmark docs/reports. Initial baseline run had a validation bug (missing `ffprobe` binary) corrected with ffmpeg-fallback probing and regenerated report.
+- **Benchmark scope:** Engine B long-duration matrix (A1–A5), Whisper WER/ground-truth, highlight reference/human evaluation, comparative optimization matrix (A–G), and extended stress matrix (5x1-min, 3x5-min, restart/reopen/after-fail timed runs) not fully executed — reported as NOT_IMPLEMENTED/NOT_RUN in benchmark docs/reports. Engine B itself is implemented and measured by its own harness (see `TEST_REPORT_ENGINE_B.md`). Initial baseline run had a validation bug (missing `ffprobe` binary) corrected with ffmpeg-fallback probing and regenerated report.
 

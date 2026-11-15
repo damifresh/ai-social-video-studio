@@ -23,7 +23,8 @@ def get_db():
 
 def ensure_schema() -> None:
     """Create tables and apply additive SQLite migrations for existing databases."""
-    from . import models  # noqa: F401  (register metadata)
+    from . import models  # noqa: F401  (register Engine A metadata)
+    from ..clip import models as clip_models  # noqa: F401  (register Engine B metadata)
 
     Base.metadata.create_all(bind=engine)
     additions = {

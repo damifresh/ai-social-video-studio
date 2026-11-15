@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from .api.projects import router as projects_router
 from .api.system import router as system_router
 from .benchmark.api import router as benchmark_router
+from .clip.api import router as clip_router
 from .core.config import APP_NAME, APP_VERSION, FRONTEND_DIST, PROJECTS_DIR, detect_engines, settings
 from .db.database import ensure_schema, recover_interrupted_jobs
 from .services.memory import system_snapshot
@@ -23,6 +24,11 @@ async def lifespan(app: FastAPI):
     interrupted = recover_interrupted_jobs()
     if interrupted:
         print(f"[startup] marked {interrupted} interrupted job(s); artifacts preserved")
+    from .clip.jobs import recover_interrupted_clip_jobs
+
+    clip_interrupted = recover_interrupted_clip_jobs()
+    if clip_interrupted:
+        print(f"[startup] marked {clip_interrupted} interrupted auto-clip job(s); artifacts preserved")
     yield
 
 
@@ -44,6 +50,7 @@ app.add_middleware(
 app.include_router(projects_router)
 app.include_router(system_router)
 app.include_router(benchmark_router)
+app.include_router(clip_router)
 
 
 @app.get("/health")
