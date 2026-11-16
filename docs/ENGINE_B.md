@@ -20,7 +20,8 @@ never share tables, files or job rows.
 |---|---|---|
 | Upload MP4 / MOV / MKV / WebM, original bytes preserved | Working | SHA-256 of stored file equals SHA-256 of uploaded file for all four containers (`B1-UPLOAD`) |
 | Stream metadata (duration, size, fps, codecs, channels) | Working | ffprobe when present, otherwise FFmpeg stderr parsing (`B1-METADATA`) |
-| Audio extraction, loudness envelope, silence gaps, scene cuts | Working | `B2-ANALYZE` measured on a 67.5 s source |
+| Audio extraction, loudness envelope, silence gaps, scene cuts | Working | `B2-ANALYZE` measured on a 67.5 s source; long-source runs measured 68.55 s → 3733.12 s (37,332 envelope windows, 809 silence gaps at 62 min) |
+| Long-source ingest → highlights → render | Working (synthetic media) | A1–A5 (1/5/15/30/60 min) each 6/6 PASS: analysis 0.46 → 18.51 s, highlights 0.02 → 2.88 s, deep-end render 1.56–2.35 s, all validated. Real-footage long sources **NOT_RUN** |
 | Transcript from local whisper.cpp | **Implemented, NOT verified here** | Binary and GGML model are not installed in this environment; capability gating returns `available:false` with reasons (`B3-ASR` = NOT_RUN) |
 | Transcript import (SRT / VTT / plain text) | Working | `B3-IMPORT` (15 cues, monotonic, timings labelled "file", word timings labelled "estimated") |
 | Transcript editing in-app | Working | `PUT /api/clip/projects/{id}/transcript` rebuilds sentence boundaries |
@@ -302,3 +303,8 @@ transcript.
    transcript and clips.
 6. **Standalone `ffprobe` absent in this environment.** Probing falls back to FFmpeg
    stderr parsing; the active method is recorded as `probe_source` on every source/render.
+7. **Long-source evidence uses synthetic media.** 1/5/15/30/60-minute files are TTS over
+   `testsrc2` colour video (1.56 MB → 84.78 MB). Latency/memory were measured on those
+   (analysis 0.46 → 18.51 s, render 1.56–2.35 s, peaks 77 → 452 MB), but a real 720p/1080p
+   recording of the same length decodes far more data; real-footage long-source cost is
+   unmeasured. See `TEST_REPORT_ENGINE_B.md` §6.1.

@@ -37,9 +37,9 @@ Dev DB: `data/studio.db`; project folders under `data/projects/<id>/` (script/sc
 - `docs/TROUBLESHOOTING.md` — common issues and recovery
 - `docs/TEST_REPORT.md` — acceptance matrix, measurements, packaged-app evidence, honest gaps
 - `docs/ENGINE_B.md` — Engine B feature specs (goal/engine/behaviour/acceptance/constraints/UI/API/docs), data model, API reference, enabling ASR, limitations
-- `docs/TEST_REPORT_ENGINE_B.md` — Engine B harness results, per-case evidence, render measurements, NOT_RUN list
+- `docs/TEST_REPORT_ENGINE_B.md` — Engine B harness results, per-case evidence, long-source matrix, render measurements, NOT_RUN list
 - `docs/CHANGELOG_ENGINE_B.md` — change record, shared-code touches, verification, rollback
-- `docs/M2_HARDWARE_BENCHMARK.md` — M2 8 GB benchmark suite methodology, measured Engine A results, reports, and honest NOT_IMPLEMENTED/NOT_RUN gaps (Engine B long-duration matrix, WER, highlight quality)
+- `docs/M2_HARDWARE_BENCHMARK.md` — M2 8 GB benchmark suite methodology, measured Engine A and Engine B results, reports, and honest NOT_IMPLEMENTED/NOT_RUN gaps (real-footage long sources, WER, highlight quality)
 - `models/README.md` — optional model downloads/licensing notes
 
 ## 6. Benchmark subsystem & measured evidence (2026-11-14)
@@ -49,7 +49,7 @@ Dev DB: `data/studio.db`; project folders under `data/projects/<id>/` (script/sc
   - `579bf2c90636` format checks — **PASS**: 9:16 720×1280 (15.366 s, peak 743.3 MB) and 1:1 720×720 (12.543 s, peak 460.1 MB), exports valid.
   - `8f20fe6de9f9` cancel-during-generation — **PASS**: canceled, 3.7 s, peak 91.8 MB, no crash.
 - **Reports:** `benchmarks/reports/*.json|.html` and `benchmarks/data/runs/*.json` (measured; initial baseline had ffprobe-binary validation bug corrected via ffmpeg-fallback probe).
-- **Not implemented/measured (honest):** Engine B 5/15/30/60-minute matrix (A1–A5) NOT_RUN; Whisper.cpp/models and ground-truth transcripts unavailable (WER/alignment NOT_RUN); no human highlight reference/ratings; GPU/Metal utilization not reliably sampled (privileged powermetrics unavailable); comparative optimization matrix and extended stress matrix not fully executed.
+- **Not implemented/measured (honest):** Whisper.cpp/models and ground-truth transcripts unavailable (WER/alignment NOT_RUN); no human highlight reference/ratings; GPU/Metal utilization not reliably sampled (privileged powermetrics unavailable); comparative optimization matrix and extended stress matrix not fully executed. Engine B A1–A5 are measured on synthetic long sources by a separate harness (see §6b).
 
 ## 6b. Engine B (AI Auto-Clip Studio) — implemented and measured (2026-11-15)
 - **Code:** `backend/app/clip/` (models, store, probe, audio, transcribe, highlights, metadata, render, jobs, api), `/api/clip/*`, `frontend/src/pages/ClipStudio.tsx` + `ClipProject.tsx`, `scripts/engine_b_e2e.py`, `scripts/install_whisper_cpp.sh`.
@@ -62,8 +62,13 @@ Dev DB: `data/studio.db`; project folders under `data/projects/<id>/` (script/sc
   - Render: 9:16 720×1280 (1.42 MB), 16:9 1280×720 (1.24 MB), 1:1 720×720 (1.05 MB); 44.14 s; 28 cues; −16.0 LUFS; A/V delta < 0.1 s; peaks 348–402 MB.
   - Batch: 2 requested → 2 exported with per-item manifest, all validations ok.
   - Cancel → `canceled`, tmp cleaned; restart → `interrupted`; source replacement → 409/200 with stale clips/transcript cleared.
+- **Long-source matrix (`scripts/engine_b_longrun.py`):** 68.55 s / 344.19 s / 965.24 s / 1864.85 s / 3733.12 s synthetic sources — **6/6 PASS in each run**: byte-identical upload, one monotonic SRT segment per sentence, 5 non-overlapping highlights, deep-end 720p render validated.
+  - Analysis: 0.46 / 1.81 / 4.97 / 9.79 / 18.51 s (peaks 77 / 174 / 233 / 247 / 452 MB).
+  - Highlights: 0.02 / 0.06 / 0.26 / 0.82 / 2.88 s.
+  - Deep-end render: 1.56 / 2.30 / 2.03 / 2.23 / 2.35 s (peaks 377 / 359 / 371 / 384 / 415 MB), outputs 28.56–44.77 s, −15.8 to −16.2 LUFS.
+  - Reports: `benchmarks/data/engine_b/long_{cc1341298172_1m,46fd0657910e_5m,44d05b39c4b9_15m,49293b9eaf59_30m,b9fc947aaa5d_60m}.json`.
 - **Engine A regression after the change:** `benchmarks/data/runs/9bd9e75d5312.json` — **PASS** (16.464 s wall, 69.49 s output, 725.9 MB peak).
-- **Honest gaps:** whisper.cpp not installed → ASR `NOT_RUN`, no WER; standalone `ffprobe` absent; no human highlight ratings; packaged app not rebuilt for Engine B; no automated browser click-through.
+- **Honest gaps:** whisper.cpp not installed → ASR `NOT_RUN`, no WER; standalone `ffprobe` absent; no human highlight ratings; long sources are synthetic colour video, so real-footage decode/seek cost is unmeasured; packaged app not rebuilt for Engine B; no automated browser click-through.
 
 ## 7. Honest capability notes
 - **Local/offline, no paid APIs:** yes (macOS `say`, FFmpeg, Pillow, deterministic script, loopback-only backend). Internet not required for generation.

@@ -1,0 +1,187 @@
+{
+  "id": "46fd0657910e",
+  "kind": "engine_b_longrun",
+  "created_at": "2026-11-16T06:08:37.436380+00:00",
+  "target_minutes": 5.0,
+  "wall_sec": 103.93,
+  "environment": {
+    "date": "2026-11-16T06:06:53.505966+00:00",
+    "machine": "Apple M2 / 8 GB (as reported by platform)",
+    "platform": "darwin",
+    "python": "3.11.18",
+    "ffmpeg": "/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/backend/.venv/lib/python3.11/site-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1",
+    "asr": {
+      "backend": "unavailable",
+      "available": false,
+      "bin": null,
+      "bin_path": null,
+      "model": null,
+      "model_path": null,
+      "reasons": [
+        "whisper.cpp binary not found (set WHISPER_BIN or build into models/whisper.cpp/build/bin)",
+        "no GGML model found (set WHISPER_MODEL or place ggml-base.en.bin in models/whisper.cpp/models)"
+      ],
+      "manual_import": true,
+      "note": "Manual SRT/VTT/plain-text import always available. ASR is never simulated."
+    },
+    "global_memory_percent": 83.8,
+    "source_kind": "synthetic local TTS narration + FFmpeg colour video (real files, generated on this machine)",
+    "target_minutes": 5.0,
+    "fixture": {
+      "duration_sec": 344.19,
+      "sentences": 75,
+      "source": "/var/folders/13/hptm7dt95psgf3y_8ktd8d980000gn/T/engineb_long_5m_kfb4a3vv/source.mp4",
+      "probe": {
+        "probe_source": "ffmpeg_fallback",
+        "size_bytes": 7830069,
+        "duration": 344.19,
+        "video_codec": "h264",
+        "width": 1280,
+        "height": 720,
+        "audio_codec": "aac",
+        "sample_rate": 48000,
+        "channels": 2,
+        "audio_streams": 1,
+        "fps": 30.0,
+        "bitrate_kbps": 181,
+        "container": "mov",
+        "video_duration": 344.19,
+        "audio_duration": 344.19
+      },
+      "build_wall_sec": 99.63
+    },
+    "project_id": "81654b4b-da5d-434e-a890-aae555e7506b",
+    "source_probe_kind": "ffmpeg_fallback"
+  },
+  "summary": {
+    "total": 6,
+    "pass": 6,
+    "warning": 0,
+    "fail": 0,
+    "not_run": 0,
+    "overall_status": "PASS"
+  },
+  "cases": [
+    {
+      "id": "LONG-FIXTURE",
+      "name": "Generated long local source + exact SRT",
+      "status": "PASS",
+      "checks": {
+        "duration_ok": true,
+        "audio_streams": true,
+        "has_srt": true
+      },
+      "metrics": {
+        "duration_sec": 344.19,
+        "build_wall_sec": 99.63,
+        "sentences": 75
+      },
+      "notes": "",
+      "evidence": {}
+    },
+    {
+      "id": "LONG-UPLOAD",
+      "name": "Upload long source; bytes preserved",
+      "status": "PASS",
+      "checks": {
+        "status": 200,
+        "sha256_match": true,
+        "duration_sec": 344.19
+      },
+      "metrics": {
+        "wall_sec": 0.04,
+        "size_bytes": 7830069
+      },
+      "notes": "",
+      "evidence": {}
+    },
+    {
+      "id": "LONG-ANALYZE",
+      "name": "Analyze a long source (streamed envelope + silence scan)",
+      "status": "PASS",
+      "checks": {
+        "job_status": "succeeded",
+        "envelope_windows": 3442,
+        "silence_gaps": 74,
+        "scene_cuts": 0
+      },
+      "metrics": {
+        "wall_sec": 1.81,
+        "peak_rss_mb": 174
+      },
+      "notes": "",
+      "evidence": {}
+    },
+    {
+      "id": "LONG-IMPORT",
+      "name": "Import long SRT (monotonic, clamped)",
+      "status": "PASS",
+      "checks": {
+        "status": 200,
+        "segments": 75,
+        "expected_segments": 75,
+        "monotonic": true,
+        "last_end_sec": 344.15
+      },
+      "metrics": {
+        "wall_sec": 0.02
+      },
+      "notes": "",
+      "evidence": {}
+    },
+    {
+      "id": "LONG-HIGHLIGHTS",
+      "name": "Highlight selection across a long timeline",
+      "status": "PASS",
+      "checks": {
+        "job_status": "succeeded",
+        "clips": 5,
+        "requested": 5,
+        "overlaps": 0,
+        "clips_in_second_half": 2,
+        "shortfall": null,
+        "windows_evaluated": 143
+      },
+      "metrics": {
+        "wall_sec": 0.06
+      },
+      "notes": "",
+      "evidence": {}
+    },
+    {
+      "id": "LONG-RENDER",
+      "name": "Render a clip from the deep end of a long source",
+      "status": "PASS",
+      "checks": {
+        "job_status": "succeeded",
+        "start_sec": 276.411,
+        "end_sec": 320.76,
+        "cues": 27,
+        "validation": {
+          "exists": true,
+          "resolution_ok": true,
+          "video_codec_h264": true,
+          "audio_codec_aac": true,
+          "duration_ok": true,
+          "audio_present": true,
+          "size_ok": true,
+          "av_sync_ok": true,
+          "ok": true
+        }
+      },
+      "metrics": {
+        "wall_sec": 2.3,
+        "peak_rss_mb": 359,
+        "output_duration_sec": 44.39,
+        "output_size_bytes": 1447304,
+        "loudness": {
+          "integrated_lufs": -15.9,
+          "true_peak_dbfs": -4.5,
+          "lra_lu": 2.1
+        }
+      },
+      "notes": "",
+      "evidence": {}
+    }
+  ]
+}

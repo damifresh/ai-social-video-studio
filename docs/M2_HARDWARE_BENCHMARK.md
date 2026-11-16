@@ -49,19 +49,31 @@ Source: `benchmarks/data/runs/*` and generated reports (`environment.hardware`, 
 ## 4. AI Auto-Clip results (Engine B)
 
 Engine B (AI Auto-Clip Studio) **is implemented** in this codebase and is measured by its own
-harness, `scripts/engine_b_e2e.py` — see [`TEST_REPORT_ENGINE_B.md`](TEST_REPORT_ENGINE_B.md)
-and `benchmarks/data/engine_b/`. The A1–A5 duration matrix below belongs to *this* benchmark
-suite and was **not executed** here.
+harnesses — `scripts/engine_b_e2e.py` (acceptance) and `scripts/engine_b_longrun.py`
+(duration matrix) — see [`TEST_REPORT_ENGINE_B.md`](TEST_REPORT_ENGINE_B.md) and
+`benchmarks/data/engine_b/`. The A1–A5 cases below were executed on **synthetic** local
+sources (TTS narration + FFmpeg colour video with an exact SRT); no number is extrapolated.
+They are not part of this benchmark suite's JSON.
 
-| Test | Duration | Status | Reason |
-|---|---:|---|---|
-| A1 | 1 min | **NOT_RUN** | Engine B implemented, but this suite's A1 case was not run; a 67.5 s source was measured by the Engine B harness (14 PASS / 0 FAIL / 1 NOT_RUN ASR) |
-| A2 | 5 min | **NOT_RUN** | Not executed in this suite |
-| A3 | 15 min | **NOT_RUN** | Not executed |
-| A4 | 30 min | **NOT_RUN** | Not executed |
-| A5 | 60 min | **NOT_RUN** | Not executed |
+| Test | Target | Actual source | Status | Analyze | Highlights | Deep-end render |
+|---|---:|---:|---|---:|---:|---:|
+| A1 | 1 min | 68.55 s | **PASS** (synthetic) | 0.46 s / 77 MB | 0.02 s, 2 clips | 1.56 s / 377 MB, 28.56 s out |
+| A2 | 5 min | 344.19 s | **PASS** (synthetic) | 1.81 s / 174 MB | 0.06 s, 5 clips | 2.30 s / 359 MB, 44.39 s out |
+| A3 | 15 min | 965.24 s | **PASS** (synthetic) | 4.97 s / 233 MB | 0.26 s, 5 clips | 2.03 s / 371 MB, 38.59 s out |
+| A4 | 30 min | 1864.85 s | **PASS** (synthetic) | 9.79 s / 247 MB | 0.82 s, 5 clips | 2.23 s / 384 MB, 38.59 s out |
+| A5 | 60 min | 3733.12 s | **PASS** (synthetic) | 18.51 s / 452 MB | 2.88 s, 5 clips | 2.35 s / 415 MB, 44.77 s out |
 
-**Measured values (this suite):** none for A1–A5. Engine B's separate harness measured a 67.52 s synthetic source: renders 2.41 s / 2.17 s / 1.85 s wall and 402 / 376 / 348 MB peak RSS for 9:16 / 16:9 / 1:1 at 44.14 s output. No fabricated times/memory/swap/CPU/export metrics.
+Every A1–A5 run also verified byte-identical upload (SHA-256), exact SRT import (one monotonic
+segment per sentence), 5 non-overlapping highlights, and a fully validated 720p H.264/AAC
+render (`av_sync_ok`, loudness −15.8 to −16.2 LUFS). Reports:
+`benchmarks/data/engine_b/long_*_{1,5,15,30,60}m.json`.
+
+**Honest limits:** analysis is roughly linear (18.51 s for 62 minutes) and render cost follows
+clip length, not source length. But the fixtures are colour video that decodes cheaply
+(84.78 MB for the hour), so these are lower bounds for real footage. Real 720p/1080p
+long recordings are **NOT_RUN**. Engine B's short-source acceptance run measured a 67.52 s
+source with renders 2.41 s / 2.17 s / 1.85 s wall and 402 / 376 / 348 MB peak RSS for
+9:16 / 16:9 / 1:1 at 44.14 s output.
 
 ## 5. Transcription accuracy
 
@@ -91,7 +103,7 @@ Validation checks executed on real outputs (ffmpeg-fallback probe; ffprobe binar
 | `579bf2c90636` VC-60S-9x16 | 9:16 | **PASS** | 720×1280 | 67.43 | 3.54 | Valid export, aspect check passed |
 | `579bf2c90636` VC-60S-1x1 | 1:1 | **PASS** | 720×720 | 65.96 | 3.26 | Valid export, aspect check passed |
 
-**A/V sync (spot-check from prior verified acceptance renders):** stream durations matched in ffprobe-based acceptance evidence (e.g. 78.52 s 16:9, 329.1 s 5-min). Current benchmark probe reports container/stream presence and duration; deep A/V drift analysis beyond probe not separately instrumented. **Engine B clip exports (from uploaded sources):** **NOT_RUN**.
+**A/V sync (spot-check from prior verified acceptance renders):** stream durations matched in ffprobe-based acceptance evidence (e.g. 78.52 s 16:9, 329.1 s 5-min). Current benchmark probe reports container/stream presence and duration; deep A/V drift analysis beyond probe not separately instrumented. **Engine B clip exports (from uploaded sources):** all 5 long-source renders and 3 aspect renders validated `av_sync_ok` (stream-duration delta < 0.1 s); per-frame drift not instrumented.
 
 ## 8. AI Video Creator results (Engine A, measured baseline)
 
@@ -109,7 +121,7 @@ Validation checks executed on real outputs (ffmpeg-fallback probe; ffprobe binar
 |---|---|---|
 | 5 consecutive 1-minute videos | **NOT_RUN** (this benchmark session) | Prior ad-hoc acceptance runs completed without OOM; no automated 5x loop benchmark recorded here |
 | 3 consecutive 5-minute videos | **NOT_RUN** | High time/memory cost on 8 GB; not executed in this session |
-| Multiple clips from one 30-minute source (Engine B) | **NOT_RUN** | Engine B implemented; 30-minute case not executed |
+| Multiple clips from one 30-minute source (Engine B) | **PASS** (selection; 1 of 5 rendered) | `long_49293b9eaf59_30m.json`: 5 non-overlapping clips selected in 0.82 s; one deep-end clip rendered in 2.23 s / 384 MB and validated |
 | Cancel job during transcription | **NOT_RUN** | No transcription pipeline/Whisper job in Engine A |
 | Cancel job during rendering/generation | **PASS** (`8f20fe6de9f9`, STAB-CANCEL) | `job.canceled=True` set ~2.5 s into real run; terminal `job_status=canceled`, wall 3.7 s, peak app RSS 91.8 MB, **no crash observed** |
 | Restart app during recoverable workflow | **NOT_RUN** (automated) | Startup recovery logic exists and previously verified (`interrupted` marking); automated restart benchmark not executed here |
@@ -163,6 +175,9 @@ Validation checks executed on real outputs (ffmpeg-fallback probe; ffprobe binar
 
 Raw run records: `benchmarks/data/runs/*.json` (include samples excerpts, configs, environment, sections, statuses).
 
+Engine B reports (separate harnesses): `benchmarks/data/engine_b/e2e_cb28b3f43d1f_20261115T080431Z.json`
+(acceptance) and `benchmarks/data/engine_b/long_*_{1,5,15,30,60}m.json` (duration matrix).
+
 ## 14. Final hardware capability classification
 
 | Engine | Workload | Classification | Notes |
@@ -171,16 +186,17 @@ Raw run records: `benchmarks/data/runs/*.json` (include samples excerpts, config
 | AI Video Creator (Engine A) | 3-minute 720p generation | **SUPPORTED_WITH_OPTIMIZATION** (prior acceptance evidence) | 183.55 s output measured previously (see `docs/TEST_REPORT.md`); not rerun in this automated benchmark session |
 | AI Video Creator (Engine A) | 5-minute 720p generation | **SUPPORTED_WITH_OPTIMIZATION** (prior acceptance evidence) | 329.1 s, peak 746 MB measured previously; narration exceeded 300 s target |
 | AI Video Creator (Engine A) | Cancel during generation (basic) | **SUPPORTED_WITH_OPTIMIZATION** | Measured PASS (canceled, no crash); checkpoint-dependent responsiveness |
-| AI Auto-Clip Studio (Engine B) | Auto-clip on short sources (≤ ~1–2 min tested) | **SUPPORTED_WITH_OPTIMIZATION** (measured separately) | 67.52 s synthetic source: 3 aspects validated, 1.85–2.41 s per render, 348–402 MB peak. Long-duration and ASR paths **not measured** (`NOT_RUN`). |
+| AI Auto-Clip Studio (Engine B) | Auto-clip on short sources (≤ ~1–2 min tested) | **SUPPORTED_WITH_OPTIMIZATION** (measured separately) | 67.52 s synthetic source: 3 aspects validated, 1.85–2.41 s per render, 348–402 MB peak. ASR path still **NOT_RUN**. |
+| AI Auto-Clip Studio (Engine B) | Auto-clip on long sources (1–60 min, synthetic) | **SUPPORTED_WITH_OPTIMIZATION** (measured separately) | 68.55 s → 3733.12 s sources: analysis 0.46 → 18.51 s (77 → 452 MB), highlights 0.02 → 2.88 s, deep-end render 1.56–2.35 s (359–415 MB), all validated. Real-footage cost **NOT_RUN**. |
 
 ## 15. Bottleneck analysis, recommendations, failures, limitations
 
-**Bottlenecks (measured/observed):** narration synthesis + per-scene FFmpeg composition dominate wall time; narration-driven output length affects processing ratio/targets; host memory pressure/swap can be high system-wide during runs on 8 GB.
+**Bottlenecks (measured/observed):** Engine A — narration synthesis + per-scene FFmpeg composition dominate wall time; narration-driven output length affects processing ratio/targets; host memory pressure/swap can be high system-wide during runs on 8 GB. Engine B — envelope analysis scales with source duration (18.51 s for 62 min) and render cost with clip length (2.0–2.4 s per 30–45 s clip); deep seeking is not a bottleneck on the synthetic source, but real long-GOP footage was not measured.
 
 **Optimization recommendations (evidence-aligned):** keep sequential, disk-backed, per-scene processing; tighten scripts for target duration; add more cancel checkpoints in long operations; install/benchmark Whisper only with ground-truth datasets; do not enable concurrent heavy workloads (diffusion+transcription) on 8 GB.
 
 **Failed tests (executed benchmark suite):** none in final corrected results. (Initial `6a80bee33c89` report marked FAIL due to missing `ffprobe` binary in validator — **measurement/reporting defect corrected**, export itself was valid and revalidated PASS.)
 
-**Known limitations:** Engine B implemented but its 5/15/30/60-minute matrix and ASR path are NOT_RUN; Whisper/Kokoro not installed/verified; no WER/ground-truth datasets; no highlight reference/human ratings; GPU/Metal utilization not reliably sampled; background workload not isolated; `/usr/bin/time -l` max-RSS not captured; some stress/recovery/long-duration benchmark matrix items not rerun this session (documented as NOT_RUN where applicable).
+**Known limitations:** Engine B A1–A5 are measured only on synthetic sources; real-footage long-source cost is **NOT_RUN**; the ASR path is **NOT_RUN**; Whisper/Kokoro not installed/verified; no WER/ground-truth datasets; no highlight reference/human ratings; GPU/Metal utilization not reliably sampled; background workload not isolated; `/usr/bin/time -l` max-RSS not captured; some Engine A stress/recovery matrix items not rerun this session (documented as NOT_RUN where applicable).
 
-**Final assessment:** Engine A is **measurably capable** of local 720p animated-graphics video generation on M2 8 GB for tested cases with valid exports and no observed crashes, within the constraints above. Engine B is implemented and measured for short-source clipping by its own harness (14 PASS / 0 FAIL / 1 NOT_RUN), but its long-duration matrix, ASR accuracy/WER and highlight quality against human judgement remain unverified. All results above are based on actual runs and captured reports.
+**Final assessment:** Engine A is **measurably capable** of local 720p animated-graphics video generation on M2 8 GB for tested cases with valid exports and no observed crashes, within the constraints above. Engine B is implemented and measured for short- and long-source clipping by its own harnesses (acceptance 14 PASS / 0 FAIL / 1 NOT_RUN; A1–A5 6/6 PASS each), with linear-time analysis, clip-length-bound render cost and validated 720p exports up to a 62-minute synthetic source. Its ASR accuracy/WER and highlight quality against human judgement remain unverified, and real-footage long-source cost is not measured. All results above are based on actual runs and captured reports.

@@ -44,8 +44,9 @@ Harness `scripts/engine_b_e2e.py`, synthetic 67.52 s source (macOS `say` narrati
 | Render 9:16 / 16:9 / 1:1 | PASS | 720×1280 (1.42 MB), 1280×720 (1.24 MB), 720×720 (1.05 MB); H.264/AAC, 28 cues, −16.0 LUFS, A/V delta < 0.1 s |
 | Batch export | PASS | 2 requested → 2 exported, per-item manifest with duration/size/validation/loudness/hashtags |
 | Cancel live job / restart recovery | PASS | terminal `canceled`, tmp cleaned; in-flight row → `interrupted` |
+| Long sources 1 / 5 / 15 / 30 / 60 min | PASS (synthetic) | A1–A5 each 6/6: analysis 0.46 → 18.51 s (77 → 452 MB), highlights 0.02 → 2.88 s, deep-end render 1.56–2.35 s (359–415 MB), all validated |
 
-14 PASS / 0 FAIL / 1 NOT_RUN. Engine A regression re-run after the change: **PASS** (`VC-60S`, 16.464 s wall, 69.49 s output, 725.9 MB peak). Full honesty notes: [`docs/TEST_REPORT_ENGINE_B.md`](docs/TEST_REPORT_ENGINE_B.md).
+14 PASS / 0 FAIL / 1 NOT_RUN in acceptance. Long-source harness `scripts/engine_b_longrun.py` measured 68.55 s → 3733.12 s sources with byte-identical upload, exact SRT import and validated 720p renders (`benchmarks/data/engine_b/long_*_{1,5,15,30,60}m.json`). Fixtures are TTS over colour video, so real-footage long-source cost is **not** measured. Engine A regression re-run after the change: **PASS** (`VC-60S`, 16.464 s wall, 69.49 s output, 725.9 MB peak). Full honesty notes: [`docs/TEST_REPORT_ENGINE_B.md`](docs/TEST_REPORT_ENGINE_B.md).
 
 ## Quick start (dev)
 
@@ -98,7 +99,7 @@ Open `dist-desktop/AI Social Video Studio-1.0.0-arm64.dmg` and drag to Applicati
 - **Engine B ASR not verified:** whisper.cpp binary/model are not installed, so transcription is `NOT_RUN`; SRT/VTT import is the verified path and `scripts/install_whisper_cpp.sh` installs the local backend. No WER is claimed.
 - **Engine B highlight quality is unrated:** scoring is deterministic and inspectable, but there are no human reference ratings and no virality claim.
 - **Engine B has no tracking:** crops are static geometry; a moving subject can leave the chosen rectangle.
-- **Engine B long-duration cases untested:** 5/15/30/60-minute sources are `NOT_RUN`; the measured source is 67.5 s.
+- **Engine B long-source evidence is synthetic:** 1/5/15/30/60-minute fixtures are TTS over colour video (84.78 MB for the 62-minute case); measured analysis 0.46 → 18.51 s and render cost bound by clip length, but real 720p/1080p footage of the same length is `NOT_RUN`.
 - **Engine B in the packaged app:** the desktop bundle was not rebuilt for Engine B in this session.
 
 ## Documentation

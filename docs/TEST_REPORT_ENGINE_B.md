@@ -5,8 +5,8 @@
 **Build under test:** base commit `f629237` + the Engine B change set (see [`CHANGELOG_ENGINE_B.md`](CHANGELOG_ENGINE_B.md)); working tree was dirty during the runs and each report records its environment
 **FFmpeg:** imageio-ffmpeg v7.1 arm64 (`ffmpeg-macos-aarch64-v7.1`) — no standalone `ffprobe` on this machine
 **ASR:** whisper.cpp binary **and** GGML model absent (`/api/clip/capabilities` → `available: false` with explicit reasons)
-**Harness:** `scripts/engine_b_e2e.py` (FastAPI `TestClient`, in-process job threads, real FFmpeg)
-**Reports:** `benchmarks/data/engine_b/e2e_cb28b3f43d1f_20261115T080431Z.json` (full run), `.../e2e_9eeda88fc15b_...json` (earlier full run), `.../e2e_072140ee2f2e_...json` (first run, failed — kept for traceability)
+**Harnesses:** `scripts/engine_b_e2e.py` (acceptance, FastAPI `TestClient`, in-process job threads, real FFmpeg) and `scripts/engine_b_longrun.py` (1/5/15/30/60-minute measurement, same API, real files)
+**Reports:** `benchmarks/data/engine_b/e2e_cb28b3f43d1f_20261115T080431Z.json` (full run), `.../e2e_9eeda88fc15b_...json` (earlier full run), `.../e2e_072140ee2f2e_...json` (first run, failed — kept for traceability), `.../long_*_{1,5,15,30,60}m.json` (long-source matrix)
 
 > **Policy:** every PASS/FAIL below comes from a check the harness actually executed and recorded. Missing prerequisites are `NOT_RUN`, never silently passed. There are no fabricated transcripts, quality scores or timings. Source media is **synthetic** (see §2), so nothing here is evidence about real-world footage quality.
 
@@ -23,11 +23,14 @@
 | NOT_RUN | 1 (`B3-ASR`: no whisper.cpp binary/model) |
 | Overall status reported by harness | `WARNING` (a NOT_RUN is never reported as PASS) |
 | Total harness wall time | 31.64 s |
+| Long-source matrix (separate harness) | 6/6 PASS in each of 1/5/15/30/60 min runs |
 | Engine A regression (separate suite) | PASS — `benchmarks/data/runs/9bd9e75d5312.json` |
 
 What this run **does** establish: ingest of all four containers with byte-identical preservation, probing accuracy, structural analysis, SRT import, deterministic highlight scoring, 720p H.264/AAC rendering in three aspects with burned captions and loudness normalisation, batch export with a per-item manifest, persistence after reload, validation errors, source replacement semantics, live cancellation, restart recovery, and that Engine A's tables/endpoints still work.
 
-What it **does not** establish: ASR accuracy (no backend), word-level timing fidelity, WER, highlight quality versus human judgement, long-duration (5/15/30/60-minute) performance, or real-footage behaviour. See §7.
+A separate harness (`scripts/engine_b_longrun.py`) additionally measured ingest → analysis → SRT import → highlight selection → deep-end render on synthetic sources of **68.55 s, 5:44, 16:05, 31:05 and 62:13** — all six cases PASS at every size (§6.1). That is real measured latency/memory for long files, not extrapolation.
+
+What it **does not** establish: ASR accuracy (no backend), word-level timing fidelity, WER, highlight quality versus human judgement, real-footage behaviour, or that a 60-minute *real* recording behaves like the synthetic one (synthetic video is cheap to decode). See §7.
 
 ---
 
@@ -117,6 +120,16 @@ PYTHONPATH=backend backend/.venv/bin/python scripts/engine_b_e2e.py --quick
 
 Reports are written to `benchmarks/data/engine_b/e2e_<id>_<timestamp>.json`. The harness aborts are recorded as a `RUN` FAIL case with a traceback rather than being swallowed.
 
+Long-source matrix (builds the fixture itself, so it takes minutes of wall time):
+
+```bash
+PYTHONPATH=backend backend/.venv/bin/python scripts/engine_b_longrun.py --minutes 5
+PYTHONPATH=backend backend/.venv/bin/python scripts/engine_b_longrun.py --minutes 60 --keep
+```
+
+Reports are written to `benchmarks/data/engine_b/long_<id>_<N>m.json`. Delete the
+`--keep` fixture and project afterwards; both are large.
+
 ---
 
 ## 6. Engine A regression (must stay independent)
@@ -131,6 +144,50 @@ Engine A tables (`projects`, `jobs`) and endpoints are unchanged; Engine B adds 
 
 ---
 
+## 6.1 Long-source matrix (A1–A5, measured)
+
+`scripts/engine_b_longrun.py --minutes N` builds a real local source of the requested
+length, then drives the same HTTP API as the acceptance harness. The script repeats the
+15-sentence narration in numbered chapters so sentences stay distinct and the SRT stays
+exact; each run uploads the file fresh and records upload, analysis, SRT import, highlight
+selection and one render of a clip **starting in the last third** of the timeline (deep
+seek). Every value below was produced by that run — nothing is extrapolated.
+
+| Target | Source | Sentences | Upload | Analyze (peak RSS) | Highlights | Deep-end render (peak RSS) | Output |
+|---|---:|---:|---:|---:|---:|---:|---|
+| 1 min | 68.55 s | 15 | 0.03 s / 1.56 MB | 0.46 s / 77 MB | 0.02 s (2 clips) | 1.56 s / 377 MB | 28.56 s, 919,513 B, −16.2 LUFS |
+| 5 min | 344.19 s | 75 | 0.04 s / 7.83 MB | 1.81 s / 174 MB | 0.06 s (5 clips) | 2.30 s / 359 MB | 44.39 s, 1,447,304 B, −15.9 LUFS |
+| 15 min | 965.24 s | 210 | 0.07 s / 21.92 MB | 4.97 s / 233 MB | 0.26 s (5 clips) | 2.03 s / 371 MB | 38.59 s, 1,223,537 B, −16.2 LUFS |
+| 30 min | 1864.85 s | 405 | 0.14 s / 42.35 MB | 9.79 s / 247 MB | 0.82 s (5 clips) | 2.23 s / 384 MB | 38.59 s, 1,248,259 B, −16.2 LUFS |
+| 60 min | 3733.12 s | 810 | 0.24 s / 84.78 MB | 18.51 s / 452 MB | 2.88 s (5 clips) | 2.35 s / 415 MB | 44.77 s, 1,446,847 B, −15.8 LUFS |
+
+Reports: `benchmarks/data/engine_b/long_cc1341298172_1m.json`,
+`long_46fd0657910e_5m.json`, `long_44d05b39c4b9_15m.json`,
+`long_49293b9eaf59_30m.json`, `long_b9fc947aaa5d_60m.json`.
+
+What each run asserted (all true, hence 6/6 PASS per run):
+
+- fixture duration ≥ 90 % of target, ≥ 1 audio stream, SRT exists;
+- upload `200` and stored SHA-256 equals the uploaded file's SHA-256;
+- analysis job `succeeded` with envelope windows ≈ 1/second of source (37,332 at 60 min) and silence gaps = sentences − 1;
+- SRT import returns exactly one segment per sentence, monotonic, last cue ≤ source duration;
+- highlights are non-overlapping and fill the requested count when the timeline permits (5 for the ≥5-minute sources; the 1-minute source legitimately fits only 2 at the 20/30 s targets and reports a shortfall); for the ≥5-minute sources at least one clip starts in the second half;
+- the deep-end render validates (`exists, resolution_ok, video_codec_h264, audio_codec_aac, duration_ok, audio_present, size_ok, av_sync_ok`).
+
+Honest reading of these numbers:
+
+1. **Analysis scales roughly linearly** (0.46 s / 1.81 s / 4.97 s / 9.79 s / 18.51 s for 68 s → 62 min) and stays under 0.5 % of source length at 60 min.
+2. **Highlight selection is transcript-driven**, so it grows with sentence count (0.02 → 2.88 s) rather than decode cost.
+3. **Render cost is clip-length bound, not source-length bound** (1.56–2.35 s for 29–45 s outputs), because FFmpeg seeks to the clip window. Deep seeks at 31 and 62 minutes cost the same as a 5-minute seek within measurement noise.
+4. **Memory is modest but not flat:** analysis peaks at 452 MB for the hour-long file; render peaks 359–415 MB. This is sampled process-tree RSS, not the kernel high-water mark.
+5. **Synthetic source caveat:** colour video with a tone bed compresses to 84.78 MB for 62 minutes. A real 60-minute 720p/1080p recording will be far larger to decode and seek; expect higher upload time and possibly slower analysis/render. Those real-footage numbers are **NOT_RUN**.
+
+An earlier 5-minute run (`long_f804a9d06565_5m.json`) used a stopwatch that started after the
+job had already finished, so its analyze time read `0.0 s`; it was discarded and re-run with
+a corrected timer (`long_46fd0657910e_5m.json`, cited above).
+
+---
+
 ## 7. NOT_RUN / unverified (honest)
 
 | Item | Status | Why |
@@ -138,7 +195,8 @@ Engine A tables (`projects`, `jobs`) and endpoints are unchanged; Engine B adds 
 | whisper.cpp transcription | **NOT_RUN** | No binary and no GGML model on this machine; `scripts/install_whisper_cpp.sh --check` reports `cmake` missing and exits 3 |
 | WER / word-timestamp accuracy | **NOT_RUN** | Requires an installed ASR backend *and* independent ground-truth transcripts; neither exists here |
 | Highlight quality vs human judgement | **NOT_RUN** | No reference ratings; only groundedness, inspectability and non-overlap are asserted |
-| 5 / 15 / 30 / 60-minute sources (benchmark matrix A1–A5) | **NOT_RUN** | Not executed in this session; the measured source is 67.5 s |
+| Real-footage long sources (broadcast/phone video at 5–60 min) | **NOT_RUN** | A1–A5 are measured (§6.1) but on synthetic colour video + TTS; decode/seek cost of real 720p/1080p footage is not measured |
+| Real-footage behaviour in general | **NOT_RUN** | Synthetic fixture: static scene, no camera motion, no noise/music bed, single speaker |
 | GPU / Metal utilisation | **NOT_RUN** | Not reliably sampleable without privileged `powermetrics` |
 | `/usr/bin/time -l` max RSS | **NOT_RUN** | Peaks are sampled process-tree RSS, not the kernel high-water mark |
 | Packaged-app Engine B | **NOT RUN** | The desktop bundle was not rebuilt for Engine B in this session; verification is dev-server + API/harness only |
@@ -155,3 +213,4 @@ Engine A tables (`projects`, `jobs`) and endpoints are unchanged; Engine B adds 
 4. **Two clips from one 67.5 s source.** The shortfall message is reported when fewer non-overlapping windows fit than requested; the harness asserts that behaviour rather than forcing extra clips.
 5. **Cancellation timing.** `B9-CANCEL` succeeded because the cancel flag landed while the job was live; on very short jobs a cancel can still arrive after completion, which is reported as a WARNING with the observed terminal status, never as PASS.
 6. **Memory numbers are per-job sampled peaks** on a shared 8 GB machine with background load (global memory 83.6 % during the run), not isolated benchmarks.
+7. **Long-source fixtures are synthetic.** The 1/5/15/30/60-minute files are spoken narration over `testsrc2` colour video. They exercise the real code paths and disk I/O, but their video is trivially cheap to decode and their file sizes (1.56 MB → 84.78 MB) are far below real footage of the same length. The measured long-source numbers are a lower bound on real-media cost, not a prediction of it.

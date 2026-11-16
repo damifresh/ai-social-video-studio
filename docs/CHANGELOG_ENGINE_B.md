@@ -3,6 +3,7 @@
 **Date:** 2026-11-15
 **Type:** additive feature (new engine), no change to Engine A behaviour
 **Rollback point:** commit `f629237` ("Add M2 hardware benchmark suite, measured Engine A runs, and reports")
+**Last verified commit:** `88e16ab` ("Add Engine B (AI Auto-Clip Studio)…") — long-source harness/reports and doc updates were added on top; revert that follow-up commit to return to `88e16ab` without losing Engine B.
 
 This file is the change record required by the delivery process: what was added, what was
 touched in shared code, how to verify it, and how to back it out.
@@ -21,7 +22,7 @@ locally. Engine A (topic → generated video) is untouched in behaviour.
 | New tables | `clip_projects`, `clip_sources`, `clip_candidates`, `clip_renders`, `clip_jobs` (additive only) |
 | New UI | `frontend/src/pages/ClipStudio.tsx`, `ClipProject.tsx`; routes `/clip`, `/clip/:id`; nav entry "Auto-Clip Studio" |
 | New client | `clipApi` + Engine B types in `frontend/src/lib/api.ts` |
-| New scripts | `scripts/engine_b_e2e.py` (acceptance harness), `scripts/install_whisper_cpp.sh` (optional local ASR) |
+| New scripts | `scripts/engine_b_e2e.py` (acceptance harness), `scripts/engine_b_longrun.py` (1/5/15/30/60-minute matrix), `scripts/install_whisper_cpp.sh` (optional local ASR) |
 | New docs | `docs/ENGINE_B.md`, `docs/TEST_REPORT_ENGINE_B.md`, this file |
 | New data dir | `data/clip_projects/<id>/{source,analysis,clips,exports,logs,tmp}` (gitignored) |
 
@@ -67,12 +68,20 @@ message, error, peak memory, cancel flag, terminal statuses).
 |---|---|---|
 | Backend imports / route count | `PYTHONPATH=backend backend/.venv/bin/python -c "from app.main import app; print(len(app.routes))"` | ok, 75 routes |
 | Engine B acceptance | `PYTHONPATH=backend backend/.venv/bin/python scripts/engine_b_e2e.py` | 14 PASS / 0 FAIL / 1 NOT_RUN (ASR) — see `docs/TEST_REPORT_ENGINE_B.md` |
+| Engine B long sources | `PYTHONPATH=backend backend/.venv/bin/python scripts/engine_b_longrun.py --minutes {1,5,15,30,60}` | 6/6 PASS in each run; analysis 0.46 → 18.51 s, highlights 0.02 → 2.88 s, deep-end render 1.56–2.35 s, all validated |
 | Engine A regression | `PYTHONPATH=backend backend/.venv/bin/python scripts/benchmark_suite.py --quick --json` | PASS (`9bd9e75d5312`) |
 | Frontend build | `cd frontend && npm run build` | PASS (`tsc -b && vite build`) |
 | Live server | `curl /health`, `/api/clip/capabilities`, `/clip` | 200, ASR `available:false` with reasons, SPA route 200 |
 
-Artifacts: `benchmarks/data/engine_b/e2e_*.json`, `benchmarks/data/runs/9bd9e75d5312.json`,
+Artifacts: `benchmarks/data/engine_b/e2e_*.json`, `benchmarks/data/engine_b/long_*_{1,5,15,30,60}m.json`, `benchmarks/data/runs/9bd9e75d5312.json`,
 `benchmarks/reports/benchmark_9bd9e75d5312_*.json|html`.
+
+The long-source fixtures and clip projects were deleted after the runs (temporary paths
+under the OS temp dir and `data/clip_projects/`), because they occupy hundreds of MB. The
+JSON reports remain the evidence. An earlier 5-minute report
+(`long_f804a9d06565_5m.json`) was discarded: its analyze stopwatch started after the job had
+finished and recorded `0.0 s`, so the run was repeated with a corrected timer
+(`long_46fd0657910e_5m.json`).
 
 ## 5. Rollback
 
@@ -92,6 +101,21 @@ serve `/api/projects/*` normally. The `clip_*` tables may remain in SQLite witho
 - whisper.cpp not installed → ASR path implemented but unverified (`NOT_RUN`), no WER claim.
 - Standalone `ffprobe` absent → FFmpeg stderr probing (`probe_source=ffmpeg_fallback`).
 - No human highlight reference → ranking is inspectable but not quality-scored.
-- Long-duration matrix (5/15/30/60 min) not executed.
+- Long-duration A1–A5 are measured on **synthetic** sources; real 720p/1080p footage of the same length is not measured.
 - Packaged desktop app not rebuilt for Engine B in this session.
 - No automated browser click-through of the Engine B UI.
+
+## 7. Follow-up commit — long-source evidence
+
+Added after `88e16ab` without changing Engine B behaviour:
+
+| Change | Detail |
+|---|---|
+| `scripts/engine_b_longrun.py` | builds a real synthetic source of N minutes, then measures upload → analyze → SRT import → highlights → deep-end render through the HTTP API; writes `benchmarks/data/engine_b/long_<id>_<N>m.json` |
+| Reports | `long_cc1341298172_1m`, `long_46fd0657910e_5m`, `long_44d05b39c4b9_15m`, `long_49293b9eaf59_30m`, `long_b9fc947aaa5d_60m` — 6/6 PASS each |
+| Docs | `TEST_REPORT_ENGINE_B.md` §6.1, `M2_HARDWARE_BENCHMARK.md` §4/§9/§13/§14/§15, `ENGINE_B.md`, `README.md`, `DELIVERABLES.md`, `HARDWARE_LIMITATIONS.md`, `TEST_REPORT.md` |
+| Rollback | `git revert <long-source-commit>` returns to `88e16ab`; no schema/code change |
+
+Fixture files and the generated clip projects were deleted after the runs (they totaled
+~400 MB); the JSON reports are the retained evidence. The earlier 5-minute report with a
+broken analyze timer (`long_f804a9d06565_5m.json`) was discarded and is not part of the commit.
