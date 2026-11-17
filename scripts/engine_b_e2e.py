@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -141,6 +142,47 @@ def build_fixture(work: Path, sentences: list[str], gap: float = 0.35, fps: int 
         "duration": total, "sentences": len(sentences), "variants": variants,
         "probe": probe_media(mp4),
     }
+
+
+def _norm_words(text: str) -> list[str]:
+    text = text.lower().replace("’", "'")
+    text = re.sub(r"['’]", "", text)
+    text = re.sub(r"[^\w\s']", " ", text, flags=re.UNICODE)
+    return [w for w in re.split(r"\s+", text) if w]
+
+
+def _wer(ref: str, hyp: str) -> dict:
+    """Word error rate on lowercased, punctuation-stripped tokens."""
+    r, h = _norm_words(ref), _norm_words(hyp)
+    n, m = len(r), len(h)
+    dp = [[0] * (m + 1) for _ in range(n + 1)]
+    for i in range(n + 1):
+        dp[i][0] = i
+    for j in range(m + 1):
+        dp[0][j] = j
+    for i in range(1, n + 1):
+        for j in range(1, m + 1):
+            cost = 0 if r[i - 1] == h[j - 1] else 1
+            dp[i][j] = min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost)
+    subs = dels = ins = 0
+    i, j = n, m
+    while i > 0 or j > 0:
+        if i > 0 and j > 0:
+            cost = 0 if r[i - 1] == h[j - 1] else 1
+            if dp[i][j] == dp[i - 1][j - 1] + cost:
+                if cost:
+                    subs += 1
+                i, j = i - 1, j - 1
+                continue
+        if i > 0 and dp[i][j] == dp[i - 1][j] + 1:
+            dels += 1
+            i -= 1
+        else:
+            ins += 1
+            j -= 1
+    return {"wer": round((subs + dels + ins) / n, 4) if n else None,
+            "substitutions": subs, "deletions": dels, "insertions": ins,
+            "ref_words": n, "hyp_words": m}
 
 
 class Recorder:
@@ -309,13 +351,17 @@ def main() -> int:
                 t = tr.json().get("transcript", {}) if ok else {}
                 segs = t.get("segments") or []
                 mono = all(segs[i]["end"] <= segs[i + 1]["start"] + 0.001 for i in range(len(segs) - 1))
+                hyp = " ".join(s["text"] for s in (t.get("sentences") or []))
+                w = _wer(" ".join(sentences), hyp)
                 rec.add("B3-ASR", "whisper.cpp transcription + timestamps",
                         "PASS" if ok and mono else "FAIL",
                         checks={"job_status": j["status"], "segments": len(segs),
-                                "timestamps_monotonic": mono,
-                                "last_end_within_source": (segs[-1]["end"] <= fx["duration"] + 1) if segs else False},
+                                "sentences": len(t.get("sentences") or []),
+                                "timestamps_monotonic": mono, "word_timing": t.get("word_timing"),
+                                "last_end_within_source": (segs[-1]["end"] <= fx["duration"] + 1) if segs else False,
+                                **w},
                         metrics={"wall_sec": round(time.time() - t0, 2), "peak_rss_mb": j.get("peak_memory_mb")},
-                        notes="WER not measured (no independent ground-truth transcript).")
+                        notes="WER against the fixture's known script; clean synthetic TTS, not human speech.")
             else:
                 rec.add("B3-ASR", "whisper.cpp transcription", "NOT_RUN",
                         notes="whisper.cpp binary/model not installed; capability gating verified instead. "
@@ -331,6 +377,44 @@ def main() -> int:
                     checks={"status": r.status_code, "segments": len(segs), "timing": t.get("timing"),
                             "word_timing": t.get("word_timing"), "monotonic": mono, "within_duration": within},
                     notes="Timings come from the fixture's measured speech; word timing is labeled estimated.")
+
+            # 3b. ASR-only project: the recognised transcript (not the SRT) must drive
+            # highlights, captions and a render, otherwise ASR is not actually wired in.
+            apid = client.post("/api/clip/projects", json={"title": f"E2E ASR {run_id}",
+                                                           "aspect_ratio": "9:16"}).json()["project"]["id"]
+            created.append(apid)
+            with open(fx["video"], "rb") as fh:
+                aup = client.post(f"/api/clip/projects/{apid}/source",
+                                  files={"file": (Path(fx["video"]).name, fh, "application/octet-stream")})
+            aan = wait_job(client, client.post(f"/api/clip/projects/{apid}/analyze").json()["job"]["id"])
+            atj = wait_job(client, client.post(f"/api/clip/projects/{apid}/transcribe").json()["job"]["id"])
+            atr = client.get(f"/api/clip/projects/{apid}/transcript").json().get("transcript") or {}
+            ahj = wait_job(client, client.post(f"/api/clip/projects/{apid}/highlights",
+                                               json={"durations": [15], "count": 1}).json()["job"]["id"])
+            aclips = client.get(f"/api/clip/projects/{apid}/clips").json().get("clips", [])
+            arender = {}
+            if aclips:
+                arj = wait_job(client, client.post(f"/api/clip/clips/{aclips[0]['id']}/render",
+                                                   json={"aspect": "9:16", "burn_captions": True,
+                                                         "crop": {"mode": "center"},
+                                                         "audio": {"normalize": True}}).json()["job"]["id"])
+                arender = (arj.get("meta") or {}).get("result") or {}
+                arender["_status"] = arj["status"]
+            avalid = (arender.get("validation") or {}).get("ok") is True
+            asr_ok = (aup.status_code == 200 and aan["status"] == "succeeded"
+                      and atj["status"] == "succeeded" and bool(atr.get("sentences"))
+                      and ahj["status"] == "succeeded" and bool(aclips) and avalid)
+            rec.add("B3-ASR-PIPELINE", "ASR transcript drives highlights, captions and a render",
+                    "PASS" if asr_ok else "FAIL",
+                    checks={"upload": aup.status_code, "analyze": aan["status"],
+                            "transcribe": atj["status"],
+                            "transcript_sentences": len(atr.get("sentences") or []),
+                            "transcript_word_timing": atr.get("word_timing"),
+                            "highlights": ahj["status"], "clips": len(aclips),
+                            "render": arender.get("_status"),
+                            "cues": arender.get("cues"),
+                            "validation_ok": avalid},
+                    notes="Uses only the whisper.cpp transcript; no SRT is imported into this project.")
 
             # 4. highlights
             # The quick fixture is ~35 s, so shorter targets are used to get

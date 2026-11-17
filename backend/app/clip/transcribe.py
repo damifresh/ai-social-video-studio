@@ -24,7 +24,7 @@ from ..core.config import resolve_whisper_bin, resolve_whisper_model
 from ..services.subtitles import parse_srt, split_chunks
 
 LANGUAGES = {"auto", "en", "es", "fr", "de", "it", "pt", "nl", "hi", "ja", "ko", "zh"}
-TERMINAL = re.compile(r"[.!?]['\")\]]?$")
+TERMINAL = re.compile(r"(?:[.!?。！？]['\")\]]?)$")
 
 
 class TranscriptionUnavailable(RuntimeError):
@@ -86,15 +86,60 @@ def _estimated_words(segments: list[dict]) -> list[dict]:
     return words
 
 
-def build_sentences(words: list[dict], max_gap: float = 0.8, max_chars: int = 240) -> list[dict]:
+SPECIAL_TOKEN = re.compile(r"^(?:\[_.*\]|<\|.*\|>)$")
+NO_SPACE_LANGS = {"ja", "ko", "zh"}
+
+
+def _clean_text(text: str) -> str:
+    text = SPECIAL_TOKEN.sub(" ", text or "")
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _merge_tokens(items: list[dict], language: str) -> list[dict]:
+    """Turn whisper tokens into words, honouring leading-space word boundaries.
+
+    whisper.cpp emits subword tokens without a leading space (``Mot`` + ``ivation``)
+    and a leading space at the start of each new word (``" people"``). Joining every
+    token with a space corrupts the transcript, so tokens are concatenated until a
+    token that starts with whitespace begins the next word. Control tokens
+    (``[_BEG_]``, ``[_TT_123]``, ``<|...|>``) are dropped rather than displayed.
+    """
+    words: list[dict] = []
+    no_space = language in NO_SPACE_LANGS
+    for tok in items:
+        raw = tok.get("text") or ""
+        if not raw or SPECIAL_TOKEN.match(raw.strip()):
+            continue
+        off = tok.get("offsets") or {}
+        if "from" not in off or "to" not in off:
+            continue
+        text = raw.strip()
+        if not text:
+            continue
+        start, end = round(off["from"] / 1000.0, 3), round(off["to"] / 1000.0, 3)
+        starts_word = no_space or not words or raw[:1].isspace()
+        if starts_word:
+            words.append({"start": start, "end": end, "text": text})
+        else:
+            words[-1]["text"] += text
+            words[-1]["end"] = max(words[-1]["end"], end)
+    return words
+
+
+def build_sentences(words: list[dict], max_gap: float = 0.8, max_chars: int = 240,
+                    join_with: str | None = None) -> list[dict]:
     """Group words into sentence units using punctuation, pauses and length."""
+    sep = join_with
+    if sep is None:
+        # CJK text is conventionally unspaced; everything else uses spaces.
+        sep = " "
     sentences: list[dict] = []
     cur: list[dict] = []
     for i, w in enumerate(words):
         cur.append(w)
         nxt = words[i + 1] if i + 1 < len(words) else None
         gap = (nxt["start"] - w["end"]) if nxt else 999
-        text = " ".join(x["text"] for x in cur)
+        text = sep.join(x["text"] for x in cur)
         if TERMINAL.search(w["text"]) or gap > max_gap or len(text) >= max_chars or nxt is None:
             sentences.append({
                 "start": round(cur[0]["start"], 3),
@@ -105,7 +150,7 @@ def build_sentences(words: list[dict], max_gap: float = 0.8, max_chars: int = 24
     return sentences
 
 
-def _parse_whisper_json(data: dict) -> tuple[list[dict], list[dict]]:
+def _parse_whisper_json(data: dict, language: str = "en") -> tuple[list[dict], list[dict]]:
     items = data.get("transcription") or data.get("segments") or []
     segments: list[dict] = []
     words: list[dict] = []
@@ -117,20 +162,11 @@ def _parse_whisper_json(data: dict) -> tuple[list[dict], list[dict]]:
             start, end = float(it["start"]), float(it["end"])
         else:
             continue
-        text = (it.get("text") or "").strip()
+        text = _clean_text(it.get("text") or "")
         if not text:
             continue
         segments.append({"start": round(start, 3), "end": round(end, 3), "text": text})
-        for tok in it.get("tokens") or []:
-            off = tok.get("offsets") or {}
-            if "from" in off and "to" in off:
-                t = (tok.get("text") or "").strip()
-                if t:
-                    words.append({
-                        "start": round(off["from"] / 1000.0, 3),
-                        "end": round(off["to"] / 1000.0, 3),
-                        "text": t,
-                    })
+        words.extend(_merge_tokens(it.get("tokens") or [], language))
     return segments, words
 
 
@@ -149,7 +185,7 @@ def transcribe(
     out_json.parent.mkdir(parents=True, exist_ok=True)
     lang = language if language in LANGUAGES else "en"
     arg_sets = [
-        ["-ojf", "-ml", "1"],
+        ["-ojf"],
         ["-oj"],
     ]
     last_err = ""
@@ -176,13 +212,13 @@ def transcribe(
         produced = prefix.with_suffix(".json")
         if proc.returncode == 0 and produced.exists():
             data = json.loads(produced.read_text(encoding="utf-8", errors="replace"))
-            segments, words = _parse_whisper_json(data)
+            segments, words = _parse_whisper_json(data, lang)
             if not segments:
                 raise RuntimeError("whisper.cpp produced JSON without segments")
             native_words = bool(words)
             if not words:
                 words = _estimated_words(segments)
-            sentences = build_sentences(words)
+            sentences = build_sentences(words, join_with="" if lang in NO_SPACE_LANGS else " ")
             return {
                 "backend": "whisper_cpp",
                 "model": cap["model"],

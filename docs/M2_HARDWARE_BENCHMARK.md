@@ -32,7 +32,7 @@ Source: `benchmarks/data/runs/*` and generated reports (`environment.hardware`, 
 | FFmpeg | imageio-ffmpeg v7.1 (`ffmpeg-macos-aarch64-v7.1`, bundled binary) |
 | ffprobe binary | **Not present as standalone binary**; export validation uses ffprobe JSON when available, else **ffmpeg-based probe fallback** (`app.services.render.probe_video_info`) — recorded per probe (`source: ffmpeg_fallback`) |
 | TTS engine (verified/used) | macOS `say` (e.g. Samantha). Kokoro MLX: **not installed/verified** (`engines.kokoro=false`) |
-| ASR/transcription engine | Whisper.cpp: **not installed/verified** (`engines.whisper=false`); subtitles in Engine A are narration/timing-based |
+| ASR/transcription engine | Engine B: whisper.cpp `whisper-cli` + `ggml-base.en.bin`, **built locally and measured** (1.01 % WER on clean synthetic TTS, native word timings). Engine A subtitles remain narration/timing-based. Human-speech WER **NOT_RUN** |
 | Visual generation | Animated graphics/stills (Pillow) + FFmpeg motion (labeled). Diffusion video **not enabled** |
 | Hardware acceleration (GPU/Metal) | Not enabled as a separate encode path in pipeline; **GPU/Metal utilization not reliably sampled** without privileged `powermetrics` (reported unavailable, not fabricated) |
 | Processing model | Sequential jobs, disk-backed intermediates, 720p target, per-scene rendering |
@@ -77,13 +77,19 @@ source with renders 2.41 s / 2.17 s / 1.85 s wall and 402 / 376 / 348 MB peak RS
 
 ## 5. Transcription accuracy
 
+Local whisper.cpp `whisper-cli` + `ggml-base.en.bin` was built and measured by
+`scripts/engine_b_asr_wer.py` (see `benchmarks/data/engine_b/wer_971ca893acbe.json`).
+
 | Item | Status | Notes |
 |---|---|---|
-| Whisper.cpp Tiny / Base | **NOT_RUN** | Whisper.cpp binaries/models not installed/verified in this environment |
-| Ground-truth transcripts / WER / missing-incorrect words / timestamp alignment / sentence boundary accuracy | **NOT_RUN** | No manually verified reference transcripts or required audio datasets provided; cannot compute honestly |
-| Accent/noise/multi-speaker/fast-speech conditions | **NOT_RUN** | No validated test set executed |
+| whisper.cpp Tiny / Base | **PASS** (`base.en`) | 67.52 s clean synthetic TTS at 16 kHz: ASR 1.79 s wall, RTF 0.0265, peak 446.2 MB |
+| WER / missing-incorrect words | **PASS (clean synthetic TTS only)** | **1.01 %** = 2 substitutions / 199 words, 0 deletions, 0 insertions (`pick→take`, `behaviour→behavior`) |
+| Sentence boundaries | **PARTIAL** | 15/15 sentence count, 14/15 exact normalised text, 14/15 start+end within 0.75 s, median delta 0.32 s |
+| Human speech / accents / noise / multi-speaker / fast-speech | **NOT_RUN** | No human-speech corpus or independent ground-truth transcripts; do not generalise the TTS WER |
+| Word-timestamp fidelity vs human reference | **NOT_RUN** | Native token offsets are monotonic and within the source, but no independent alignment exists to score them |
 
-**WER formula (for future runs when prerequisites exist):** `WER = (S + D + I) / N`.
+**WER formula:** `WER = (S + D + I) / N`. This measurement verifies the adapter and
+timestamps; it is not evidence about real-world recording accuracy.
 
 ## 6. AI highlight quality
 
@@ -149,7 +155,7 @@ Validation checks executed on real outputs (ffmpeg-fallback probe; ffprobe binar
 
 | Experiment | Status | Notes |
 |---|---|---|
-| A. Whisper Tiny vs Base | **NOT_RUN** | Models/binaries not installed |
+| A. Whisper Tiny vs Base | **PARTIAL** | `base.en` measured (RTF 0.0265, 446 MB peak, 1.01 % WER on clean TTS); `tiny.en` not built/measured, so no A/B comparison |
 | B. CPU vs Apple Silicon acceleration | **NOT_RUN** (comparative) | No controlled A/B measured |
 | C. Low-res proxy vs original-resolution analysis | **NOT_RUN** | Proxy path not implemented; current analysis uses 16 kHz audio + 2 fps 320 px scan |
 | D. FFmpeg encoding presets | **NOT_RUN** (comparative) | No controlled comparison executed |
@@ -163,7 +169,7 @@ Validation checks executed on real outputs (ffmpeg-fallback probe; ffprobe binar
 
 - **Benchmark command:** `PYTHONPATH=backend backend/.venv/bin/python scripts/benchmark_suite.py [--quick|--full]` (real Engine A runs + reports under `benchmarks/`).
 - **API/UI:** `/api/benchmark/*` endpoints and `M2 Benchmark` dashboard for live samples, run history, and report paths.
-- **Unit/integration test suite (requested breadth):** Engine B now has an acceptance harness (`scripts/engine_b_e2e.py`, 15 cases) but there is still **no comprehensive pytest suite** for the full transcription/highlight/FFmpeg export matrix, and no benchmark-suite integration for Engine B.
+- **Unit/integration test suite (requested breadth):** Engine B has an acceptance harness (`scripts/engine_b_e2e.py`, 16 cases), an ASR accuracy harness (`scripts/engine_b_asr_wer.py`) and a long-source harness (`scripts/engine_b_longrun.py`), but there is still **no comprehensive pytest suite** for the full transcription/highlight/FFmpeg export matrix, and no benchmark-suite integration for Engine B.
 
 ## 13. Benchmark reports (generated artifacts)
 
@@ -175,8 +181,9 @@ Validation checks executed on real outputs (ffmpeg-fallback probe; ffprobe binar
 
 Raw run records: `benchmarks/data/runs/*.json` (include samples excerpts, configs, environment, sections, statuses).
 
-Engine B reports (separate harnesses): `benchmarks/data/engine_b/e2e_cb28b3f43d1f_20261115T080431Z.json`
-(acceptance) and `benchmarks/data/engine_b/long_*_{1,5,15,30,60}m.json` (duration matrix).
+Engine B reports (separate harnesses): `benchmarks/data/engine_b/e2e_11d49374a4fb_20261117T081352Z.json`
+(acceptance, 16 cases), `benchmarks/data/engine_b/wer_971ca893acbe.json` (ASR WER) and
+`benchmarks/data/engine_b/long_*_{1,5,15,30,60}m.json` (duration matrix).
 
 ## 14. Final hardware capability classification
 
@@ -186,17 +193,18 @@ Engine B reports (separate harnesses): `benchmarks/data/engine_b/e2e_cb28b3f43d1
 | AI Video Creator (Engine A) | 3-minute 720p generation | **SUPPORTED_WITH_OPTIMIZATION** (prior acceptance evidence) | 183.55 s output measured previously (see `docs/TEST_REPORT.md`); not rerun in this automated benchmark session |
 | AI Video Creator (Engine A) | 5-minute 720p generation | **SUPPORTED_WITH_OPTIMIZATION** (prior acceptance evidence) | 329.1 s, peak 746 MB measured previously; narration exceeded 300 s target |
 | AI Video Creator (Engine A) | Cancel during generation (basic) | **SUPPORTED_WITH_OPTIMIZATION** | Measured PASS (canceled, no crash); checkpoint-dependent responsiveness |
-| AI Auto-Clip Studio (Engine B) | Auto-clip on short sources (≤ ~1–2 min tested) | **SUPPORTED_WITH_OPTIMIZATION** (measured separately) | 67.52 s synthetic source: 3 aspects validated, 1.85–2.41 s per render, 348–402 MB peak. ASR path still **NOT_RUN**. |
+| AI Auto-Clip Studio (Engine B) | Auto-clip on short sources (≤ ~1–2 min tested) | **SUPPORTED_WITH_OPTIMIZATION** (measured separately) | 67.52 s synthetic source: 3 aspects validated, 1.83–2.30 s per render, 362–379 MB peak (latest run); ASR-only path additionally produced 1 highlight → 9:16 render (9 cues, validated). |
 | AI Auto-Clip Studio (Engine B) | Auto-clip on long sources (1–60 min, synthetic) | **SUPPORTED_WITH_OPTIMIZATION** (measured separately) | 68.55 s → 3733.12 s sources: analysis 0.46 → 18.51 s (77 → 452 MB), highlights 0.02 → 2.88 s, deep-end render 1.56–2.35 s (359–415 MB), all validated. Real-footage cost **NOT_RUN**. |
+| AI Auto-Clip Studio (Engine B) | Local ASR (whisper.cpp base.en) | **SUPPORTED** (clean synthetic TTS) | 67.52 s audio in 1.79 s (RTF 0.0265), 446.2 MB peak, native word timings, **1.01 % WER** on the known TTS script; human speech **NOT_RUN**. |
 
 ## 15. Bottleneck analysis, recommendations, failures, limitations
 
 **Bottlenecks (measured/observed):** Engine A — narration synthesis + per-scene FFmpeg composition dominate wall time; narration-driven output length affects processing ratio/targets; host memory pressure/swap can be high system-wide during runs on 8 GB. Engine B — envelope analysis scales with source duration (18.51 s for 62 min) and render cost with clip length (2.0–2.4 s per 30–45 s clip); deep seeking is not a bottleneck on the synthetic source, but real long-GOP footage was not measured.
 
-**Optimization recommendations (evidence-aligned):** keep sequential, disk-backed, per-scene processing; tighten scripts for target duration; add more cancel checkpoints in long operations; install/benchmark Whisper only with ground-truth datasets; do not enable concurrent heavy workloads (diffusion+transcription) on 8 GB.
+**Optimization recommendations (evidence-aligned):** keep sequential, disk-backed, per-scene processing; tighten scripts for target duration; add more cancel checkpoints in long operations; benchmark other Whisper sizes only with ground-truth datasets (only `base.en` was measured here); do not enable concurrent heavy workloads (diffusion+transcription) on 8 GB.
 
 **Failed tests (executed benchmark suite):** none in final corrected results. (Initial `6a80bee33c89` report marked FAIL due to missing `ffprobe` binary in validator — **measurement/reporting defect corrected**, export itself was valid and revalidated PASS.)
 
-**Known limitations:** Engine B A1–A5 are measured only on synthetic sources; real-footage long-source cost is **NOT_RUN**; the ASR path is **NOT_RUN**; Whisper/Kokoro not installed/verified; no WER/ground-truth datasets; no highlight reference/human ratings; GPU/Metal utilization not reliably sampled; background workload not isolated; `/usr/bin/time -l` max-RSS not captured; some Engine A stress/recovery matrix items not rerun this session (documented as NOT_RUN where applicable).
+**Known limitations:** Engine B A1–A5 are measured only on synthetic sources; real-footage long-source cost is **NOT_RUN**; ASR is measured only on clean synthetic TTS (human speech/accents/noise are **NOT_RUN**); no human WER corpus or independently aligned word reference; no highlight reference/human ratings; GPU/Metal utilization not reliably sampled; background workload not isolated; `/usr/bin/time -l` max-RSS not captured; some Engine A stress/recovery matrix items not rerun this session (documented as NOT_RUN where applicable).
 
-**Final assessment:** Engine A is **measurably capable** of local 720p animated-graphics video generation on M2 8 GB for tested cases with valid exports and no observed crashes, within the constraints above. Engine B is implemented and measured for short- and long-source clipping by its own harnesses (acceptance 14 PASS / 0 FAIL / 1 NOT_RUN; A1–A5 6/6 PASS each), with linear-time analysis, clip-length-bound render cost and validated 720p exports up to a 62-minute synthetic source. Its ASR accuracy/WER and highlight quality against human judgement remain unverified, and real-footage long-source cost is not measured. All results above are based on actual runs and captured reports.
+**Final assessment:** Engine A is **measurably capable** of local 720p animated-graphics video generation on M2 8 GB for tested cases with valid exports and no observed crashes, within the constraints above. Engine B is implemented and measured for short- and long-source clipping by its own harnesses (acceptance 16 PASS / 0 FAIL / 0 NOT_RUN; A1–A5 6/6 PASS each), with linear-time analysis, clip-length-bound render cost and validated 720p exports up to a 62-minute synthetic source. Local ASR runs at RTF 0.0265 with 1.01 % WER on the known clean-TTS script and native word timings; accuracy on human recordings and highlight quality against human judgement remain unverified. All results above are based on actual runs and captured reports.

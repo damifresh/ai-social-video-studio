@@ -58,6 +58,12 @@ Install them first, then re-run this script. On macOS with Homebrew:
 
     brew install cmake
 
+If you do not use Homebrew, cmake can also be installed into the app's venv as a
+Python package that ships a `cmake` binary, and the venv's `bin` placed on PATH:
+
+    uv pip install --python backend/.venv/bin/python cmake
+    export PATH="$PWD/backend/.venv/bin:$PATH"
+
 (Xcode command line tools provide git/clang: `xcode-select --install`.)
 
 Until whisper.cpp is installed the Auto-Clip Studio still works:

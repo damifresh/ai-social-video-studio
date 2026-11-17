@@ -22,7 +22,7 @@ never share tables, files or job rows.
 | Stream metadata (duration, size, fps, codecs, channels) | Working | ffprobe when present, otherwise FFmpeg stderr parsing (`B1-METADATA`) |
 | Audio extraction, loudness envelope, silence gaps, scene cuts | Working | `B2-ANALYZE` measured on a 67.5 s source; long-source runs measured 68.55 s → 3733.12 s (37,332 envelope windows, 809 silence gaps at 62 min) |
 | Long-source ingest → highlights → render | Working (synthetic media) | A1–A5 (1/5/15/30/60 min) each 6/6 PASS: analysis 0.46 → 18.51 s, highlights 0.02 → 2.88 s, deep-end render 1.56–2.35 s, all validated. Real-footage long sources **NOT_RUN** |
-| Transcript from local whisper.cpp | **Implemented, NOT verified here** | Binary and GGML model are not installed in this environment; capability gating returns `available:false` with reasons (`B3-ASR` = NOT_RUN) |
+| Transcript from local whisper.cpp | Working (measured on clean synthetic TTS) | whisper.cpp `whisper-cli` + `ggml-base.en.bin` built locally; 67.52 s → 17 segments / 15 sentences / 199 words, native timings, 1.79 s, 446 MB peak; **WER 1.01 %** on the fixture's known script (`B3-ASR`, `wer_971ca893acbe.json`). Human speech **NOT_RUN** |
 | Transcript import (SRT / VTT / plain text) | Working | `B3-IMPORT` (15 cues, monotonic, timings labelled "file", word timings labelled "estimated") |
 | Transcript editing in-app | Working | `PUT /api/clip/projects/{id}/transcript` rebuilds sentence boundaries |
 | Highlight scoring with auditable weights | Working | `B4-HIGHLIGHTS`: every clip stores per-component raw/weight/contribution + reason |
@@ -35,7 +35,8 @@ never share tables, files or job rows.
 | Transcript-grounded title/hook/caption/hashtags | Working | Deterministic `transcript-template/v1`; each field verified as a substring/token of the clip text |
 | Batch export with per-item manifest | Working | `B6-BATCH`: manifest lists measured duration, size, validation, loudness, hashtags per clip |
 | Cancellation and restart recovery | Working | `B9-CANCEL` (terminal `canceled`, tmp cleaned), `B10-RECOVERY` (in-flight → `interrupted`) |
-| WER / ASR accuracy | **NOT measured** | Requires an installed ASR build and an independent ground-truth transcript |
+| WER / ASR accuracy | Measured on clean synthetic TTS only | 1.01 % (2 substitutions `pick→take`, `behaviour→behavior`; 0 del / 0 ins; 199 words), 15/15 sentences, 14/15 boundaries within 0.75 s. Human speech/accents/noise **NOT_RUN** |
+| ASR → highlights → captions → render | Working | `B3-ASR-PIPELINE`: ASR-only project (no SRT) produced 1 highlight and a validated 9:16 render with 9 cues |
 
 Everything above was measured on the same machine; see
 [`TEST_REPORT_ENGINE_B.md`](TEST_REPORT_ENGINE_B.md).
@@ -95,9 +96,13 @@ criteria, constraints, UI, API/backend, documentation.
     monotonic; sentences rebuilt from punctuation/pauses; plain text is accepted but
     explicitly marked `timing: "none"` and cannot drive timed clips.
   - edit path: segments validated (`end > start`, non-empty), sentences rebuilt.
-- **Acceptance:** import of a 15-cue SRT yields 15 monotonic cues within duration; ASR
-  path assertion only runs when a verified backend exists, otherwise the case is NOT_RUN.
-- **Constraints:** no ASR → no invented transcript. No cloud fallback. No WER claim.
+- **Acceptance:** import of a 15-cue SRT yields 15 monotonic cues within duration; with an
+  installed backend, a 67.52 s clean-TTS fixture yields 17 segments → 15 sentences with
+  native word timings, monotonic starts, and WER 1.01 % against its known script; an
+  ASR-only project then drives highlights and a validated render (`B3-ASR-PIPELINE`).
+  Without a backend the case is NOT_RUN, never PASS.
+- **Constraints:** no backend → no invented transcript. No cloud fallback. WER is claimed
+  only for the clean synthetic fixture; human-speech accuracy is unmeasured.
 - **UI:** step 2 — capability banner with reasons, transcribe button (disabled without a
   backend), file import, paste import, editable cue list with save.
 - **API/backend:** `POST /api/clip/projects/{id}/transcribe`, `GET/PUT .../transcript`,
@@ -279,21 +284,36 @@ Errors are JSON `{"detail": "..."}` with 400/404/409/413/415/503 as appropriate.
 ```bash
 scripts/install_whisper_cpp.sh --check     # report missing prerequisites
 brew install cmake                         # if cmake is missing
+# equivalent on this machine (no Homebrew needed):
+uv pip install --python backend/.venv/bin/python cmake
 scripts/install_whisper_cpp.sh             # clone + build + download ggml-base.en.bin
 ```
 
 Then restart the backend and confirm `GET /api/clip/capabilities` reports
-`"available": true`. Model choice changes accuracy and speed; `base.en` is the 8 GB
-default, `small.en` is slower. Until then the app imports SRT/VTT and never fabricates a
-transcript.
+`"available": true` with the resolved `bin_path` and `model_path`. Model choice changes
+accuracy and speed; `base.en` is the 8 GB default (measured: RTF 0.0265, 446 MB peak),
+`small.en` is slower and was not measured here. Until a backend is installed the app
+imports SRT/VTT and never fabricates a transcript.
+
+Accuracy harness:
+
+```bash
+PYTHONPATH=backend backend/.venv/bin/python scripts/engine_b_asr_wer.py
+# → benchmarks/data/engine_b/wer_<id>.json
+```
+
+Measured result on this machine: 1.01 % WER, 15/15 sentences, native word timings, on
+clean single-speaker macOS TTS with a known script.
 
 ---
 
 ## 7. Known limitations
 
-1. **ASR not verified in this build.** No `whisper.cpp` binary/model was present, so
-   transcription quality, WER and timing accuracy are unmeasured; the E2E case is
-   reported NOT_RUN rather than passed.
+1. **ASR accuracy is only measured on clean synthetic speech.** whisper.cpp `base.en` is
+   installed and measured (1.01 % WER on the fixture's own TTS script, native word
+   timings, RTF 0.0265, 446 MB peak), but accents, background noise, multi-speaker audio,
+   fast speech and human ground-truth transcripts are **NOT_RUN**. The model is
+   English-only. Word-timestamp fidelity is unmeasured against any human-aligned reference.
 2. **No subject tracking.** Crop is static per render; a subject that moves out of the
    chosen rectangle will leave frame.
 3. **Highlight quality is unvalidated against human judgement.** Scoring is inspectable

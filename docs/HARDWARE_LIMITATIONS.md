@@ -17,7 +17,7 @@
 | Component | 8 GB guidance |
 |---|---|
 | Kokoro TTS (82M, MLX) | Feasible *if installed* (prefer 4-bit/8-bit), but run alone and unload before other heavy stages. Not auto-assumed; fallback is macOS `say`. |
-| Whisper.cpp | Prefer `tiny`/`base`/`small` ggml models; avoid `medium/large` during other work. Optional (timing-based subs available). |
+| Whisper.cpp | Installed and measured here as `base.en` (English-only). Prefer `tiny`/`base`/`small` ggml models on 8 GB; avoid `medium`/`large`. Measured 67.52 s of clean TTS in 1.79 s at 446 MB peak. |
 | Image generation (diffusion) | Use low resolutions, one image at a time, unload model after batch; expect swap on larger models. Default is programmatic graphics. |
 | Video diffusion (Wan 2.1 1.3B etc.) | **Not assumed feasible** (~10+ GB reported). Default OFF; if experimented, use shortest clips, quantization, cache controls, and measure peak memory. |
 | FFmpeg encode | Memory-safe/streaming; CPU time is the main cost. `veryfast` preset and per-scene segments reduce peak pressure. |
@@ -36,15 +36,16 @@
 - **Packaged desktop render:** 73.66 s output, 5.17 MB, peak 728 MB, successful through bundled Python/FFmpeg inside the `.app`.
 - **Engine B short source (67.52 s synthetic, separate harness):** analysis 0.4 s / 79 MB peak; 44.14 s clip renders 2.41 s (9:16, 402 MB), 2.17 s (16:9, 376 MB), 1.85 s (1:1, 348 MB); batch of 2 in 2.84 s / 377 MB. Global memory was ~83.6 % during the run; no OOM.
 - **Engine B long sources (synthetic, separate harness):** 1/5/15/30/60-minute fixtures measured end to end. Analyze 0.46 → 18.51 s (peaks 77 → 452 MB), highlights 0.02 → 2.88 s, deep-end render 1.56–2.35 s (359–415 MB). All uploads byte-identical, all renders validated; no OOM.
+- **Engine B ASR (whisper.cpp `base.en`, separate harness):** 67.52 s of clean synthetic TTS → 17 segments / 15 sentences / 199 words in **1.79 s** (RTF 0.0265), **446.2 MB** peak, native word timings, monotonic. WER **1.01 %** on the fixture's known script (2 substitutions / 199 words). Whisper runs as a subprocess, so its memory is released on exit; the sequential-job guard also covers clip jobs, so ASR and Engine A renders never overlap.
 
 ## Current limitations (honest)
 
-- **Kokoro MLX / Whisper.cpp:** not installed or runtime-verified in this build. Narration uses macOS `say` (offline) and subtitles use narration-timing segmentation (accurate to synthesized boundaries, no ASR correction). Fallbacks are recorded in metadata.
+- **Kokoro MLX:** not installed or runtime-verified in this build. Narration uses macOS `say` (offline) and subtitles use narration-timing segmentation (accurate to synthesized boundaries, no ASR correction). Fallbacks are recorded in metadata. whisper.cpp is a separate Engine B path (below) and is installed.
 - **Diffusion image/video generation:** not enabled/assumed feasible on 8 GB. Visuals are animated graphics/stills (labeled), not AI-generated footage.
 - **Narration-driven duration:** final length follows synthesized speech (measured ~174 wpm for Samantha), so 1-min/5-min targets can overshoot (e.g. ~74–79 s, 329 s) unless script/narration is shortened.
 - **Memory metric:** jobs report sampled process RSS peak; not a formal `/usr/bin/time -l` max-RSS measurement.
 - **Music/SFX:** bundled tracks are original procedural CC0 audio (`scripts/generate_assets.py`); add your own properly licensed files as needed.
 - **Desktop app:** unsigned (Gatekeeper override on first launch). Automated in-Electron UI click-through was not captured in this session.
-- **Engine B ASR:** whisper.cpp binary/model absent → transcription `NOT_RUN`; use SRT/VTT import or run `scripts/install_whisper_cpp.sh` (needs cmake + network once). No WER claim.
+- **Engine B ASR is measured only on clean synthetic speech:** whisper.cpp `base.en` is installed (cmake installed into the backend venv was the prerequisite on this machine) and produces native word timings, but the only ground truth is the TTS script that generated the fixture. Accents, background noise, multi-speaker audio, fast speech and human ground-truth transcripts are **NOT_RUN**; the 1.01 % WER must not be generalised. The model is English-only. SRT/VTT import remains available and is never simulated.
 - **Engine B long sources are measured on synthetic media:** 1/5/15/30/60-minute fixtures are TTS over `testsrc2` colour video (1.56 MB → 84.78 MB). Latency/memory are real for those files, but a real 720p/1080p recording of the same length decodes far more data; real-footage cost is unmeasured. Deep seeks (up to ~41 min into the 62-min file) were not a bottleneck on this material.
 - **Engine B tracking:** none. Crops are static geometry (centre/edges/manual rect), so a moving subject can leave frame.

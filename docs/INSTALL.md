@@ -9,7 +9,7 @@ Target: **macOS on Apple Silicon (M2, 8 GB unified memory)**. The studio runs fu
 3. The app starts its bundled Python/FFmpeg/backend automatically on a loopback port and opens the studio UI. No extra installs are required.
 4. **Data location:** `~/Library/Application Support/AI Social Video Studio/data/` (SQLite DB, projects, renders, logs). Menu: **AI Social Video Studio → Open Data Folder / Open Backend Log**.
 
-Bundled engines in this build: FFmpeg (imageio-ffmpeg v7.1 arm64), macOS `say` TTS. **Kokoro MLX** and **Whisper.cpp** are not bundled — see “Optional engines”.
+Bundled engines in this build: FFmpeg (imageio-ffmpeg v7.1 arm64), macOS `say` TTS. **Kokoro MLX** is not bundled. **Whisper.cpp** is not bundled inside the `.app` either, but it is installed in this dev environment via the installer below and measured for Engine B — see “Optional engines”.
 
 ## Option B — Run from source (dev)
 

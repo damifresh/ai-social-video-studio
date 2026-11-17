@@ -27,11 +27,11 @@ A fully local macOS desktop app and web studio with **two independent engines**:
 | 5 min 16:9 | PASS | **329.1 s**, 1280×720 @ 30 fps, **21.44 MB**, 147 cues, 15 scenes, **peak 746 MB**, generate 72.3 s |
 | Packaged `.app` render | PASS | 73.66 s, 1280×720, 5.17 MB, 33 cues, peak 728 MB, output in `~/Library/Application Support/AI Social Video Studio/data/...` |
 
-All measured renders: H.264 High / yuv420p, AAC 48 kHz stereo, burned subtitles, loudness-normalized mix (~−15.8 LUFS / −3.4 dBTP), **no cloud inference**. Narration engine: macOS `say` (offline). Kokoro MLX and Whisper.cpp not installed/verified (adapters + fallbacks in place).
+All measured renders: H.264 High / yuv420p, AAC 48 kHz stereo, burned subtitles, loudness-normalized mix (~−15.8 LUFS / −3.4 dBTP), **no cloud inference**. Narration engine: macOS `say` (offline). Kokoro MLX is not installed/verified (adapter + fallback in place); whisper.cpp `base.en` is installed and measured for Engine B.
 
-## Engine B verified snapshot (2026-11-15)
+## Engine B verified snapshot (2026-11-17)
 
-Harness `scripts/engine_b_e2e.py`, synthetic 67.52 s source (macOS `say` narration + FFmpeg colour video), measured locally:
+Harness `scripts/engine_b_e2e.py` (16 cases, whisper.cpp installed) with a synthetic 67.52 s source (macOS `say` narration + FFmpeg colour video), measured locally:
 
 | Case | Result | Measured |
 |---|---|---|
@@ -39,14 +39,16 @@ Harness `scripts/engine_b_e2e.py`, synthetic 67.52 s source (macOS `say` narrati
 | Probe metadata | PASS | 67.52 s, 1280×720, 30 fps, H.264/AAC (FFmpeg-fallback probe; no standalone `ffprobe`) |
 | Structural analysis | PASS | 676 envelope windows, 14 silence gaps, 0 scene cuts, 0.4 s, 79 MB peak |
 | Transcript import (SRT) | PASS | 15 cues, monotonic, `timing=file`, `word_timing=estimated` |
-| Local transcription (whisper.cpp) | **NOT_RUN** | Binary/model not installed; capability gating returns explicit reasons, no transcript fabricated |
+| Local transcription (whisper.cpp base.en) | PASS | 17 segments → 15 sentences, native word timings, monotonic, 1.83 s, 376 MB peak |
+| WER on the known fixture script | PASS (clean synthetic TTS) | **1.01 %** (2 substitutions / 199 words; no deletions or insertions) |
+| ASR-only clip pipeline | PASS | whisper transcript → 1 highlight → 9:16 render, 9 cues, validation ok |
 | Highlight scoring | PASS | 2 non-overlapping clips, per-component weights + reasons, copy grounded in clip text |
 | Render 9:16 / 16:9 / 1:1 | PASS | 720×1280 (1.42 MB), 1280×720 (1.24 MB), 720×720 (1.05 MB); H.264/AAC, 28 cues, −16.0 LUFS, A/V delta < 0.1 s |
 | Batch export | PASS | 2 requested → 2 exported, per-item manifest with duration/size/validation/loudness/hashtags |
 | Cancel live job / restart recovery | PASS | terminal `canceled`, tmp cleaned; in-flight row → `interrupted` |
 | Long sources 1 / 5 / 15 / 30 / 60 min | PASS (synthetic) | A1–A5 each 6/6: analysis 0.46 → 18.51 s (77 → 452 MB), highlights 0.02 → 2.88 s, deep-end render 1.56–2.35 s (359–415 MB), all validated |
 
-14 PASS / 0 FAIL / 1 NOT_RUN in acceptance. Long-source harness `scripts/engine_b_longrun.py` measured 68.55 s → 3733.12 s sources with byte-identical upload, exact SRT import and validated 720p renders (`benchmarks/data/engine_b/long_*_{1,5,15,30,60}m.json`). Fixtures are TTS over colour video, so real-footage long-source cost is **not** measured. Engine A regression re-run after the change: **PASS** (`VC-60S`, 16.464 s wall, 69.49 s output, 725.9 MB peak). Full honesty notes: [`docs/TEST_REPORT_ENGINE_B.md`](docs/TEST_REPORT_ENGINE_B.md).
+16 PASS / 0 FAIL / 0 NOT_RUN in acceptance (37.1 s). Long-source harness `scripts/engine_b_longrun.py` measured 68.55 s → 3733.12 s sources with byte-identical upload, exact SRT import and validated 720p renders (`benchmarks/data/engine_b/long_*_{1,5,15,30,60}m.json`). Fixtures are TTS over colour video, so real-footage long-source cost is **not** measured. Engine A regression re-run after the change: **PASS** (`VC-60S`, 16.464 s wall, 69.49 s output, 725.9 MB peak). Full honesty notes: [`docs/TEST_REPORT_ENGINE_B.md`](docs/TEST_REPORT_ENGINE_B.md).
 
 ## Quick start (dev)
 
@@ -92,11 +94,11 @@ Open `dist-desktop/AI Social Video Studio-1.0.0-arm64.dmg` and drag to Applicati
 
 ## Limitations (honest)
 
-- **Kokoro TTS / Whisper.cpp ASR alignment:** not installed/verified in this build; macOS `say` and narration-timing subtitles are the working local path (fallbacks recorded).
+- **Kokoro TTS:** not installed/verified in this build; macOS `say` and narration-timing subtitles are the working local path (fallbacks recorded). **Whisper.cpp ASR (Engine B):** installed and measured locally — 1.01 % WER on the clean synthetic TTS fixture with native word timings; human-speech accuracy is unmeasured, and Engine A still uses timing-based subtitles.
 - **Diffusion image/video generation:** not enabled on 8 GB; visuals are animated graphics/stills unless you add labeled footage.
 - **Narration-driven duration:** final length follows synthesized speech/timing (observed 174 wpm for Samantha); a 1-min target typically yields ~70–80 s and a 5-min target ~5.5 min unless narration is shortened.
 - **Unsigned app** and no automated in-Electron click-through test in this session.
-- **Engine B ASR not verified:** whisper.cpp binary/model are not installed, so transcription is `NOT_RUN`; SRT/VTT import is the verified path and `scripts/install_whisper_cpp.sh` installs the local backend. No WER is claimed.
+- **Engine B ASR is verified only on clean synthetic speech:** whisper.cpp `base.en` is installed locally and measured (1.01 % WER, native word timings), but the fixture is macOS TTS with a known script. Human speech, accents, noise, multi-speaker audio and ground-truth human transcripts are **not** measured; no general WER claim is made. SRT/VTT import remains available.
 - **Engine B highlight quality is unrated:** scoring is deterministic and inspectable, but there are no human reference ratings and no virality claim.
 - **Engine B has no tracking:** crops are static geometry; a moving subject can leave the chosen rectangle.
 - **Engine B long-source evidence is synthetic:** 1/5/15/30/60-minute fixtures are TTS over colour video (84.78 MB for the 62-minute case); measured analysis 0.46 → 18.51 s and render cost bound by clip length, but real 720p/1080p footage of the same length is `NOT_RUN`.

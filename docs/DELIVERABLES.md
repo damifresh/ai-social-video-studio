@@ -10,7 +10,7 @@
 - **Backend:** `backend/` — FastAPI, SQLite, sequential 8 GB-safe pipeline (script/storyboard/TTS/subtitles/audio/visuals/FFmpeg compose), engine detection, recovery, SPA/static serving. **Engine B:** `backend/app/clip/` — ingest/probe/analysis/transcription/highlights/render/export with `/api/clip/*`.
 - **Frontend:** `frontend/` — React + TypeScript + Vite + Tailwind dashboard/editor (Script, Storyboard, Timeline, Voice, Subtitles, Assets, Export), Auto-Clip Studio (`/clip`, `/clip/:id`), library/exports/settings. Production build verified (`npm run build`).
 - **Desktop shell:** `desktop/` — Electron `main.cjs`/`preload.cjs`, app metadata/build config.
-- **Scripts:** `scripts/build_desktop.sh`, `scripts/make_dmg.sh`, `scripts/make_icon.py`, `scripts/generate_assets.py` (CC0 music/SFX), `scripts/verify_pipeline.py`, `scripts/verify_extended.py`, `scripts/engine_b_e2e.py` (Engine B acceptance harness), `scripts/install_whisper_cpp.sh` (optional local ASR), startup scripts.
+- **Scripts:** `scripts/build_desktop.sh`, `scripts/make_dmg.sh`, `scripts/make_icon.py`, `scripts/generate_assets.py` (CC0 music/SFX), `scripts/verify_pipeline.py`, `scripts/verify_extended.py`, `scripts/engine_b_e2e.py` (Engine B acceptance harness), `scripts/engine_b_asr_wer.py` (ASR accuracy harness), `scripts/engine_b_longrun.py` (long-source harness), `scripts/install_whisper_cpp.sh` (local ASR install/build), startup scripts.
 - **Bundled assets:** `assets/music/*`, `assets/sfx/*` with `licenses.json` (original procedural CC0-1.0).
 
 ## 3. Verified demo outputs (720p MP4, H.264/AAC) & evidence
@@ -49,30 +49,33 @@ Dev DB: `data/studio.db`; project folders under `data/projects/<id>/` (script/sc
   - `579bf2c90636` format checks — **PASS**: 9:16 720×1280 (15.366 s, peak 743.3 MB) and 1:1 720×720 (12.543 s, peak 460.1 MB), exports valid.
   - `8f20fe6de9f9` cancel-during-generation — **PASS**: canceled, 3.7 s, peak 91.8 MB, no crash.
 - **Reports:** `benchmarks/reports/*.json|.html` and `benchmarks/data/runs/*.json` (measured; initial baseline had ffprobe-binary validation bug corrected via ffmpeg-fallback probe).
-- **Not implemented/measured (honest):** Whisper.cpp/models and ground-truth transcripts unavailable (WER/alignment NOT_RUN); no human highlight reference/ratings; GPU/Metal utilization not reliably sampled (privileged powermetrics unavailable); comparative optimization matrix and extended stress matrix not fully executed. Engine B A1–A5 are measured on synthetic long sources by a separate harness (see §6b).
+- **Not implemented/measured (honest):** human-speech WER/alignment and ground-truth human transcripts unavailable (NOT_RUN); no human highlight reference/ratings; GPU/Metal utilization not reliably sampled (privileged powermetrics unavailable); comparative optimization matrix and extended stress matrix not fully executed. Engine B A1–A5 are measured on synthetic long sources by a separate harness (see §6b).
 
-## 6b. Engine B (AI Auto-Clip Studio) — implemented and measured (2026-11-15)
-- **Code:** `backend/app/clip/` (models, store, probe, audio, transcribe, highlights, metadata, render, jobs, api), `/api/clip/*`, `frontend/src/pages/ClipStudio.tsx` + `ClipProject.tsx`, `scripts/engine_b_e2e.py`, `scripts/install_whisper_cpp.sh`.
-- **Acceptance run:** `benchmarks/data/engine_b/e2e_cb28b3f43d1f_20261115T080431Z.json` — 15 cases, **14 PASS / 0 FAIL / 1 NOT_RUN** (ASR), 31.64 s total.
+## 6b. Engine B (AI Auto-Clip Studio) — implemented and measured (2026-11-17)
+- **Code:** `backend/app/clip/` (models, store, probe, audio, transcribe, highlights, metadata, render, jobs, api), `/api/clip/*`, `frontend/src/pages/ClipStudio.tsx` + `ClipProject.tsx`, `scripts/engine_b_e2e.py`, `scripts/engine_b_asr_wer.py`, `scripts/engine_b_longrun.py`, `scripts/install_whisper_cpp.sh`.
+- **Acceptance run:** `benchmarks/data/engine_b/e2e_11d49374a4fb_20261117T081352Z.json` — 16 cases, **16 PASS / 0 FAIL / 0 NOT_RUN**, 37.1 s total (whisper.cpp installed).
   - Upload MP4/MOV/MKV/WebM: SHA-256 of stored file equals uploaded bytes for all four.
   - Probe: 67.52 s, 1280×720, 30 fps, H.264/AAC (FFmpeg-fallback probe).
   - Analyze: 676 envelope windows, 14 silence gaps, 0 scene cuts, 0.4 s, 79 MB peak.
+  - ASR: whisper.cpp `base.en` → 17 segments / 15 sentences / 199 words, native word timings, monotonic, 1.83 s, 376 MB peak, **WER 1.01 %** on the fixture's known script.
+  - ASR pipeline: recognised transcript alone drives 1 highlight → 9:16 render, 9 caption cues, validation ok.
   - Import: 15 monotonic SRT cues, `timing=file`, `word_timing=estimated`.
   - Highlights: 2 non-overlapping clips, grounded copy, per-component weights and reasons.
-  - Render: 9:16 720×1280 (1.42 MB), 16:9 1280×720 (1.24 MB), 1:1 720×720 (1.05 MB); 44.14 s; 28 cues; −16.0 LUFS; A/V delta < 0.1 s; peaks 348–402 MB.
+  - Render: 9:16 720×1280 (1.42 MB), 16:9 1280×720 (1.24 MB), 1:1 720×720 (1.05 MB); 28 cues; −16.0 LUFS; A/V delta < 0.1 s; peaks 308–388 MB.
   - Batch: 2 requested → 2 exported with per-item manifest, all validations ok.
   - Cancel → `canceled`, tmp cleaned; restart → `interrupted`; source replacement → 409/200 with stale clips/transcript cleared.
+- **ASR accuracy (`scripts/engine_b_asr_wer.py`):** `benchmarks/data/engine_b/wer_971ca893acbe.json` — whisper.cpp `whisper-cli` + `ggml-base.en.bin` (147,964,211 B, built locally) on 67.52 s of clean synthetic TTS: ASR 1.79 s, RTF 0.0265, peak 446.2 MB, 15/15 sentences, 14/15 exact normalised text, 14/15 boundaries within 0.75 s (median delta 0.32 s), **1.01 % WER** (2 substitutions `pick→take`, `behaviour→behavior`, 0 deletions, 0 insertions, 199 words). This is a clean-TTS measurement, not a human-speech benchmark.
 - **Long-source matrix (`scripts/engine_b_longrun.py`):** 68.55 s / 344.19 s / 965.24 s / 1864.85 s / 3733.12 s synthetic sources — **6/6 PASS in each run**: byte-identical upload, one monotonic SRT segment per sentence, 5 non-overlapping highlights, deep-end 720p render validated.
   - Analysis: 0.46 / 1.81 / 4.97 / 9.79 / 18.51 s (peaks 77 / 174 / 233 / 247 / 452 MB).
   - Highlights: 0.02 / 0.06 / 0.26 / 0.82 / 2.88 s.
   - Deep-end render: 1.56 / 2.30 / 2.03 / 2.23 / 2.35 s (peaks 377 / 359 / 371 / 384 / 415 MB), outputs 28.56–44.77 s, −15.8 to −16.2 LUFS.
   - Reports: `benchmarks/data/engine_b/long_{cc1341298172_1m,46fd0657910e_5m,44d05b39c4b9_15m,49293b9eaf59_30m,b9fc947aaa5d_60m}.json`.
 - **Engine A regression after the change:** `benchmarks/data/runs/9bd9e75d5312.json` — **PASS** (16.464 s wall, 69.49 s output, 725.9 MB peak).
-- **Honest gaps:** whisper.cpp not installed → ASR `NOT_RUN`, no WER; standalone `ffprobe` absent; no human highlight ratings; long sources are synthetic colour video, so real-footage decode/seek cost is unmeasured; packaged app not rebuilt for Engine B; no automated browser click-through.
+- **Honest gaps:** human-speech WER, accents, noise, multi-speaker and independent ground-truth transcripts are `NOT_RUN` (the 1.01 % figure is clean synthetic TTS); word-timestamp fidelity vs a human reference is unmeasured; standalone `ffprobe` absent; no human highlight ratings; long sources are synthetic colour video, so real-footage decode/seek cost is unmeasured; packaged app not rebuilt for Engine B; no automated browser click-through.
 
 ## 7. Honest capability notes
 - **Local/offline, no paid APIs:** yes (macOS `say`, FFmpeg, Pillow, deterministic script, loopback-only backend). Internet not required for generation.
-- **Kokoro/Whisper.cpp:** adapters and fallbacks implemented; **not installed/verified** in this build. Timing-based subtitles and macOS `say` are the proven path for Engine A; Engine B uses SRT/VTT import and gates ASR explicitly (`NOT_RUN`, no WER claim).
+- **Kokoro/Whisper.cpp:** Kokoro MLX is **not installed/verified** (adapter + fallback implemented); macOS `say` is the proven Engine A narration path. whisper.cpp `base.en` **is** installed, built locally and measured for Engine B (1.01 % WER on clean synthetic TTS, native word timings); SRT/VTT import remains the verified manual path and ASR is never simulated.
 - **Engine B reframing:** deterministic geometry only — no face/subject tracking; no virality prediction from highlight scores.
 - **Diffusion video:** not enabled on 8 GB; visuals are **animated graphics/stills** (labeled), not AI-generated footage.
 - **Narration-driven duration:** outputs may exceed nominal targets (e.g. 5-min target → 329 s at measured speech rate).
