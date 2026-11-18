@@ -1,0 +1,63 @@
+{
+  "id": "a3af06a18580",
+  "kind": "engine_b_packaged_check",
+  "created_at": "2026-11-18T06:04:56.858107+00:00",
+  "status": "PASS",
+  "environment": {
+    "app_bundle": "/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/dist-desktop/mac-arm64/AI Social Video Studio.app",
+    "app_exists": true,
+    "backend_url": "http://127.0.0.1:50842",
+    "data_dir": "/Users/apple/Library/Application Support/AI Social Video Studio/data",
+    "ffmpeg": "/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/dist-desktop/mac-arm64/AI Social Video Studio.app/Contents/Resources/runtime/py-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1",
+    "asr": {
+      "backend": "whisper_cpp",
+      "available": true,
+      "bin": "whisper-cli",
+      "bin_path": "/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/dist-desktop/mac-arm64/AI Social Video Studio.app/Contents/Resources/runtime/models/whisper.cpp/build/bin/whisper-cli",
+      "model": "ggml-base.en.bin",
+      "model_path": "/Users/apple/Desktop/forge 4/workspace/local-ai-video-studio/dist-desktop/mac-arm64/AI Social Video Studio.app/Contents/Resources/runtime/models/whisper.cpp/models/ggml-base.en.bin",
+      "reasons": [],
+      "manual_import": true,
+      "note": "Manual SRT/VTT/plain-text import always available. ASR is never simulated."
+    },
+    "fixture": {
+      "kind": "synthetic macOS TTS + FFmpeg colour video",
+      "sentences": 5,
+      "duration_sec": 23.36
+    }
+  },
+  "checks": {
+    "health_ok": true,
+    "packaged_asr_available": true,
+    "upload": true,
+    "analyze": true,
+    "transcribe": true,
+    "transcript_sentences": true,
+    "native_word_timing": true,
+    "highlights": true,
+    "render": true,
+    "validation_ok": true,
+    "cues": true
+  },
+  "metrics": {
+    "wall_sec": 3.42,
+    "transcribe_peak_rss_mb": 369,
+    "segments": 6,
+    "sentences": 5,
+    "word_timing": "native",
+    "clips": 1,
+    "cues": 9,
+    "validation": {
+      "exists": true,
+      "resolution_ok": true,
+      "video_codec_h264": true,
+      "audio_codec_aac": true,
+      "duration_ok": true,
+      "audio_present": true,
+      "size_ok": true,
+      "av_sync_ok": true,
+      "ok": true
+    }
+  },
+  "note": "Real loopback HTTP against the backend embedded in the packaged .app. Source is synthetic TTS, so this verifies wiring, not human-speech accuracy."
+}

@@ -149,3 +149,20 @@ Added after `47f1d1e`. No Engine A behaviour change; no schema change.
 **Rollback:** `git revert <asr-commit>` returns to `47f1d1e`. The ASR binary/model live
 under gitignored `models/whisper.cpp/`, so reverting code leaves the local install in
 place; `WHISPER_BIN`/`WHISPER_MODEL` may also be unset to gate ASR off without deleting it.
+
+## 9. Follow-up — Engine B in the packaged desktop app
+
+| Change | Detail |
+|---|---|
+| `scripts/build_desktop.sh` | After syncing `models/`, prune a local whisper.cpp source tree to its runtime payload: `build/bin/` (CLI + dylibs, verified with `otool -L`) and `models/ggml-*.bin`. The ~85 MB CMake/source tree is not shipped. The pruned runtime was run directly (`whisper-cli --help`, exit 0) before packaging |
+| Rebuild | `./scripts/build_desktop.sh` PASS — new `.dmg` 342 MB, `.zip` 319 MB (previously 210/188 MB) under `dist-desktop/` |
+| Packaged check | New `scripts/engine_b_packaged_check.py`: discovers the Electron backend port from `~/Library/Application Support/AI Social Video Studio/logs/backend.log`, verifies `/health` and ASR capability, then drives upload → analyze → transcribe → highlights → 9:16 render through loopback HTTP. If the app is not running it exits 3 with NOT_RUN and never starts a service |
+| Report `benchmarks/data/engine_b/packaged_a3af06a18580.json` | **11/11 checks PASS**: ASR `available: true` with paths inside the app bundle; 5 sentences / 6 segments, native timings, 1 clip, 9 cues, 720p H.264/AAC validation ok, 3.42 s; transcription peak 369 MB. Source is synthetic TTS |
+| Docs | `README.md`, `docs/DELIVERABLES.md`, `docs/DESKTOP_APP.md`, `docs/TEST_REPORT.md`, `docs/TEST_REPORT_ENGINE_B.md` §6c and §7, `docs/HARDWARE_LIMITATIONS.md`, this section |
+
+**Still NOT_RUN:** the Electron UI click-through (no browser automation session). The
+packaged *backend* is verified; this is not a claim about UI interactions.
+
+**Rollback:** `git revert` this follow-up. The previous `.app`/DMG are replaced in place by
+a rebuild, so to return to the old bundle rebuild after reverting the build-script change.
+Source-level Engine B is untouched by this section.

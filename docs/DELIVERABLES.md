@@ -2,7 +2,7 @@
 
 ## 1. Working macOS desktop application (`.app`) — packaged
 - **Location:** `dist-desktop/mac-arm64/AI Social Video Studio.app`
-- **Installers/archives:** `dist-desktop/AI Social Video Studio-1.0.0-arm64.dmg` (210 MB), `dist-desktop/AI Social Video Studio-1.0.0-arm64-mac.zip` (188 MB)
+- **Installers/archives:** `dist-desktop/AI Social Video Studio-1.0.0-arm64.dmg` (342 MB), `dist-desktop/AI Social Video Studio-1.0.0-arm64-mac.zip` (319 MB) — rebuilt 2026-11-18 with Engine B and a pruned whisper.cpp runtime (CLI + dylibs + GGML model, ~150 MB)
 - **Contents:** Electron shell + bundled relocatable CPython 3.11 + Python deps + FastAPI backend + built React frontend + FFmpeg (imageio-ffmpeg v7.1) + CC0 assets + docs/models area.
 - **Verified:** launches, starts loopback backend, serves UI, and completed a real packaged render (73.66 s 1280×720 MP4, 33 cues, peak 728 MB) writing to `~/Library/Application Support/AI Social Video Studio/data/...`. See `docs/DESKTOP_APP.md` and `docs/TEST_REPORT.md`.
 
@@ -71,7 +71,8 @@ Dev DB: `data/studio.db`; project folders under `data/projects/<id>/` (script/sc
   - Deep-end render: 1.56 / 2.30 / 2.03 / 2.23 / 2.35 s (peaks 377 / 359 / 371 / 384 / 415 MB), outputs 28.56–44.77 s, −15.8 to −16.2 LUFS.
   - Reports: `benchmarks/data/engine_b/long_{cc1341298172_1m,46fd0657910e_5m,44d05b39c4b9_15m,49293b9eaf59_30m,b9fc947aaa5d_60m}.json`.
 - **Engine A regression after the change:** `benchmarks/data/runs/9bd9e75d5312.json` — **PASS** (16.464 s wall, 69.49 s output, 725.9 MB peak).
-- **Honest gaps:** human-speech WER, accents, noise, multi-speaker and independent ground-truth transcripts are `NOT_RUN` (the 1.01 % figure is clean synthetic TTS); word-timestamp fidelity vs a human reference is unmeasured; standalone `ffprobe` absent; no human highlight ratings; long sources are synthetic colour video, so real-footage decode/seek cost is unmeasured; packaged app not rebuilt for Engine B; no automated browser click-through.
+- **Packaged-app backend check (`scripts/engine_b_packaged_check.py`, 2026-11-18):** `benchmarks/data/engine_b/packaged_a3af06a18580.json` — **11/11 checks PASS**. App bundle rebuilt with Engine B and a pruned whisper.cpp runtime (CLI + dylibs + `ggml-base.en.bin`, ~150 MB). Launched `.app`, read its loopback port from the app's own log, verified `/health` and `/api/clip/capabilities` (`available: true`, paths inside `*.app/Contents/Resources/runtime/models/...`), then drove a 5-sentence 23.36 s synthetic source through upload → analyze → ASR (6 segments / 5 sentences, native timings, 369 MB peak) → 1 highlight → 9:16 render (9 cues, all validation flags ok) in 3.42 s. No browser/UI click-through was performed.
+- **Honest gaps:** human-speech WER, accents, noise, multi-speaker and independent ground-truth transcripts are `NOT_RUN` (the 1.01 % figure is clean synthetic TTS); word-timestamp fidelity vs a human reference is unmeasured; standalone `ffprobe` absent; no human highlight ratings; long sources are synthetic colour video, so real-footage decode/seek cost is unmeasured; packaged app rebuilt and its backend smoke-checked (see §6c), but no automated browser click-through.
 
 ## 7. Honest capability notes
 - **Local/offline, no paid APIs:** yes (macOS `say`, FFmpeg, Pillow, deterministic script, loopback-only backend). Internet not required for generation.

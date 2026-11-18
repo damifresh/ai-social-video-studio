@@ -102,7 +102,7 @@ Open `dist-desktop/AI Social Video Studio-1.0.0-arm64.dmg` and drag to Applicati
 - **Engine B highlight quality is unrated:** scoring is deterministic and inspectable, but there are no human reference ratings and no virality claim.
 - **Engine B has no tracking:** crops are static geometry; a moving subject can leave the chosen rectangle.
 - **Engine B long-source evidence is synthetic:** 1/5/15/30/60-minute fixtures are TTS over colour video (84.78 MB for the 62-minute case); measured analysis 0.46 → 18.51 s and render cost bound by clip length, but real 720p/1080p footage of the same length is `NOT_RUN`.
-- **Engine B in the packaged app:** the desktop bundle was not rebuilt for Engine B in this session.
+- **Engine B in the packaged app:** rebuilt and verified on 2026-11-18 — bundled whisper.cpp ASR is available and a 5-sentence synthetic source went upload → analyze → ASR → highlights → validated 9:16 render through the app's loopback backend (`packaged_a3af06a18580.json`, 11/11 checks PASS). The Electron UI itself was not click-tested.
 
 ## Documentation
 

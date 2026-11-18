@@ -50,10 +50,11 @@ The DMG is produced with macOS `hdiutil` (no electron-builder DMG helper downloa
 - Launched `.app`, backend started on loopback and served `/health` (`ffmpeg_ok=true`, `say=true`, bundled imageio-ffmpeg v7.1, `kokoro=false`, `whisper=false`).
 - SPA routes loaded (`/`, `/library`, `/exports`, `/settings`, `/project/:id`), bundled music served from `/media/music/*.wav` (HTTP 200).
 - Real render executed through the packaged app backend: **73.66 s** 16:9 1280×720 @ 30 fps, **5.17 MB**, H.264 High + AAC 48 kHz stereo, **33 cues** burned, loudness ≈ **−15.8 LUFS / −3.4 dBTP**, **peak 728 MB**, render **17.0 s**. Output written to user data: `~/Library/Application Support/AI Social Video Studio/data/projects/<id>/renders/final_16x9_720p.mp4` with SRT/VTT/ASS sidecars.
+- **Rebuilt 2026-11-18 with Engine B:** bundled whisper.cpp runtime; `/api/clip/capabilities` reports ASR available from paths inside the app bundle. A 5-sentence synthetic source went upload → analyze → ASR (native word timings) → highlights → validated 9:16 render through the app's loopback API: **11/11 checks PASS**, `benchmarks/data/engine_b/packaged_a3af06a18580.json`.
 
 ## Known gaps / honest limits
 
-- **Kokoro MLX** and **Whisper.cpp** are not bundled/installed by default; the packaged app uses macOS `say` narration and timing-based subtitles with recorded fallbacks.
+- **Kokoro MLX** is not bundled; the packaged app uses macOS `say` narration and timing-based subtitles with recorded fallbacks. **Whisper.cpp is bundled** in the rebuilt app (`runtime/models/whisper.cpp/`: CLI + dylibs + `ggml-base.en.bin`, ~150 MB), so `/api/clip/capabilities` reports `available: true` for Engine B. A real packaged clip pipeline is recorded in `benchmarks/data/engine_b/packaged_a3af06a18580.json`.
 - **Diffusion/generated footage** is not enabled on 8 GB; visuals are animated graphics/stills by default and labeled as such.
 - The app is not notarized/signed; Gatekeeper steps may be required on first launch.
 - Browser-automation click-through of the Electron window was not captured in this environment (a full-screen desktop screenshot was captured while the app was running; backend/UI endpoints and a real packaged render were verified).

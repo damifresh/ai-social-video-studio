@@ -35,7 +35,7 @@
 | Bundled media/assets | **PASS** | `/media/music/ambient_calm_loop.wav` HTTP 200 (1.92 MB); library reports bundled tracks |
 | Real render inside packaged app | **PASS** | 73.66 s, 1280×720 @ 30 fps, 5.17 MB, 33 cues, peak 728 MB, 17.04 s render; output in `~/Library/Application Support/AI Social Video Studio/data/projects/2b9a01ed-8393-4a87-81c9-0f3beaa2c806/renders/final_16x9_720p.mp4` (SRT/VTT/ASS present) |
 | Clean shutdown | **PASS** | Quit stopped backend process (log shows shutdown/SIGKILL termination) |
-| DMG/ZIP artifacts | **PASS** | `AI Social Video Studio-1.0.0-arm64.dmg` (210 MB), `-arm64-mac.zip` (188 MB) |
+| DMG/ZIP artifacts | **PASS** | `AI Social Video Studio-1.0.0-arm64.dmg` (342 MB), `-arm64-mac.zip` (319 MB) — rebuilt 2026-11-18 with Engine B and bundled whisper.cpp |
 | GUI screenshot | **PARTIAL** | Full-screen capture while app running: `docs/screenshots/01-dashboard-full.png` (2880×1800). Automated Electron window/content assertion not run (browser tool not connected). |
 
 ## Additional verified behaviors
@@ -70,7 +70,7 @@ Dedicated benchmark instrumentation and dashboard added (`backend/app/benchmark/
 ## Known gaps / limitations (honest)
 
 - **Kokoro MLX** is not installed or runtime-verified; macOS `say` + timing subtitles are the proven Engine A local path. Engine B's whisper.cpp `base.en` **is** installed and measured (1.01 % WER on clean synthetic TTS, native word timings); human-speech accuracy is **NOT_RUN**, so no general WER is claimed.
-- **Engine B scope:** measured on a synthetic 67.5 s source plus a synthetic 1/5/15/30/60-minute matrix (`benchmarks/data/engine_b/long_*_{1,5,15,30,60}m.json`); real-footage quality/cost at long durations, human highlight ratings, packaged-app Engine B and automated browser click-through are **NOT_RUN**.
+- **Engine B scope:** measured on a synthetic 67.5 s source plus a synthetic 1/5/15/30/60-minute matrix (`benchmarks/data/engine_b/long_*_{1,5,15,30,60}m.json`); real-footage quality/cost at long durations, human highlight ratings and automated browser click-through are **NOT_RUN**; the packaged app's Engine B backend was rebuilt and smoke-checked (`benchmarks/data/engine_b/packaged_a3af06a18580.json`, 11/11 checks PASS).
 - **Diffusion/generated footage** not enabled on 8 GB; visuals are animated graphics (labeled), not AI-generated video frames.
 - **Narration-driven duration:** output can exceed the nominal minute target (measured ~174 wpm). 5-min target produced 329 s.
 - **Memory metric:** sampled process peak RSS reported by jobs/benchmarks, not `/usr/bin/time -l` high-water mark.

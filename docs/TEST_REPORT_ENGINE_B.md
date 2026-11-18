@@ -230,6 +230,24 @@ a corrected timer (`long_46fd0657910e_5m.json`, cited above).
 
 ---
 
+## 6c. Packaged desktop app (rebuilt 2026-11-18)
+
+`scripts/build_desktop.sh` was rerun with Engine B and a pruned whisper.cpp runtime
+(`build/bin/` CLI + dylibs and `models/ggml-base.en.bin`, ~150 MB; CMake tree and source
+excluded). Outputs: `.dmg` 342 MB, `.zip` 319 MB. The app was launched, the backend's
+loopback port was read from the app's own log, and `scripts/engine_b_packaged_check.py`
+drove a 5-sentence synthetic source (23.36 s) through the real packaged API:
+
+| Check | Result |
+|---|---|
+| `/health`, `/api/clip/capabilities` | `ok=true`, `whisper=true`, ASR `available: true` with paths inside `*.app/Contents/Resources/runtime/models/whisper.cpp/` |
+| Upload → analyze → transcribe | 200 / succeeded / succeeded — 6 segments → 5 sentences, `native` word timings, 369 MB transcription peak |
+| Highlights → 9:16 render | 1 clip, render succeeded, 9 caption cues, 720p H.264/AAC validation `ok=true` (all 8 flags) |
+| Harness total | **11/11 checks PASS**, 3.42 s — `benchmarks/data/engine_b/packaged_a3af06a18580.json` |
+
+This verifies Engine B's backend and ASR in the packaged app. It does **not** verify the
+Electron UI by click-through (no browser automation session was available).
+
 ## 7. NOT_RUN / unverified (honest)
 
 | Item | Status | Why |
@@ -241,7 +259,8 @@ a corrected timer (`long_46fd0657910e_5m.json`, cited above).
 | Real-footage behaviour in general | **NOT_RUN** | Synthetic fixture: static scene, no camera motion, no noise/music bed, single speaker |
 | GPU / Metal utilisation | **NOT_RUN** | Not reliably sampleable without privileged `powermetrics` |
 | `/usr/bin/time -l` max RSS | **NOT_RUN** | Peaks are sampled process-tree RSS, not the kernel high-water mark |
-| Packaged-app Engine B | **NOT RUN** | The desktop bundle was not rebuilt for Engine B in this session; verification is dev-server + API/harness only |
+| Packaged-app Engine B backend | **PASS** | Rebuilt 2026-11-18; `scripts/engine_b_packaged_check.py` drove a real 5-sentence source through the app's loopback backend: upload/analyze/ASR (6 segments → 5 sentences, native timings)/highlights/9:16 render, 9 cues, validation ok, 11/11 checks (`packaged_a3af06a18580.json`) |
+| Packaged-app Engine B UI click-through | **NOT RUN** | No connected browser session; the Electron window was launched and its backend/API verified, but no automated UI interaction was recorded |
 | Browser click-through of the Engine B UI | **NOT RUN** | No connected browser session; the frontend builds (`tsc -b && vite build` PASS) and the SPA route returns `200`, but no automated interaction was recorded |
 | A/V drift beyond duration delta | **NOT RUN** | Validation compares stream durations (< 0.1 s); no per-frame sync analysis |
 

@@ -64,6 +64,22 @@ rm -rf "$RES/assets" "$RES/docs" "$RES/models"
 rsync -a --exclude '.DS_Store' assets/ "$RES/assets/"
 rsync -a --exclude '.DS_Store' docs/ "$RES/docs/"
 rsync -a --exclude '.DS_Store' models/ "$RES/models/"
+
+# If a local whisper.cpp build exists, ship only what ASR needs at runtime:
+# the CLI plus its dylibs (build/bin) and the GGML model. The CMake tree and
+# the upstream source add ~85 MB and are not used by the app.
+if [[ -d "$RES/models/whisper.cpp" ]]; then
+  prune_tmp="$(mktemp -d)"
+  mkdir -p "$prune_tmp/bin" "$prune_tmp/models"
+  find "$RES/models/whisper.cpp/build/bin" -maxdepth 1 -type f \( -name 'whisper-cli' -o -name 'main' -o -name '*.dylib' \) -exec cp -p {} "$prune_tmp/bin/" \; 2>/dev/null || true
+  find "$RES/models/whisper.cpp/models" -maxdepth 1 -type f -name 'ggml-*.bin' -exec cp -p {} "$prune_tmp/models/" \; 2>/dev/null || true
+  rm -rf "$RES/models/whisper.cpp"
+  mkdir -p "$RES/models/whisper.cpp/build" "$RES/models/whisper.cpp/models"
+  [[ -d "$prune_tmp/bin" ]] && cp -Rp "$prune_tmp/bin" "$RES/models/whisper.cpp/build/bin" 2>/dev/null || true
+  cp -Rp "$prune_tmp/models/." "$RES/models/whisper.cpp/models/" 2>/dev/null || true
+  rm -rf "$prune_tmp"
+  printf 'whisper runtime: %s\n' "$(du -sh "$RES/models/whisper.cpp" | cut -f1)"
+fi
 cp README.md "$RES/README.md" 2>/dev/null || true
 
 if [[ "$DO_PYTHON" == "1" || ! -x "$RES/python/bin/python3" ]]; then
