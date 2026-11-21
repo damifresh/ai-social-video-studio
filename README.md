@@ -9,6 +9,10 @@ A fully local macOS desktop app and web studio with **two independent engines**:
 - **Target hardware:** Apple M2, 8 GB unified memory, macOS (Apple Silicon).
 - **Honest visuals:** defaults to **animated stills/graphics** (Pillow + FFmpeg motion). Diffusion/generated footage is not assumed feasible on 8 GB and is never silently substituted.
 
+![AI Social Video Studio dashboard](docs/screenshots/01-dashboard-full.png)
+
+*Dashboard: one local studio for prompt-to-video creation and transcript-grounded auto-clipping.*
+
 ## Deliverables in this repo
 
 - **Packaged desktop app:** `dist-desktop/mac-arm64/AI Social Video Studio.app`, `...-arm64-mac.zip`, and `...-arm64.dmg` (built locally). See [`docs/DESKTOP_APP.md`](docs/DESKTOP_APP.md).
