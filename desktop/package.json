@@ -9,6 +9,7 @@
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
+    "smoke": "node ../scripts/ui_smoke.cjs",
     "dist": "electron-builder --mac --arm64"
   },
   "devDependencies": {

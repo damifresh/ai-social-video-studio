@@ -9,6 +9,7 @@ import {
   fmtDuration,
 } from '../lib/api';
 import { Alert, Badge, Button, Empty, Field, Panel, Progress, SectionTitle, Spinner, statusTone } from '../components/ui';
+import Prompter from '../components/Prompter';
 
 const DURATIONS = [15, 30, 45, 60, 90];
 const ASPECTS = ['9:16', '16:9', '1:1'];
@@ -75,17 +76,84 @@ export default function ClipProject() {
   const [durations, setDurations] = useState<number[]>([30]);
   const [customDur, setCustomDur] = useState('');
   const [count, setCount] = useState(5);
+  const [prompt, setPrompt] = useState('');
+  const [directorPreset, setDirectorPreset] = useState('tiktok');
+  const [singleClip, setSingleClip] = useState(false);
+  const [captions, setCaptions] = useState(true);
+  const [transitions, setTransitions] = useState(true);
+  const promptLoadedFor = useRef('');
+
+  const changeSingleClip = (enabled: boolean) => {
+    setSingleClip(enabled);
+    setData((current) => current?.project
+      ? {
+          ...current,
+          project: {
+            ...current.project,
+            settings: { ...(current.project.settings || {}), single_clip: enabled },
+          },
+        }
+      : current);
+    clipApi.updateProject(pid, {
+      settings: { single_clip: enabled },
+    }).catch(() => {});
+  };
+
+  const changeCaptions = (enabled: boolean) => {
+    setCaptions(enabled);
+    setData((current) => current?.project
+      ? {
+          ...current,
+          project: {
+            ...current.project,
+            burn_captions: enabled,
+            settings: { ...(current.project.settings || {}), burn_captions: enabled },
+          },
+          clips: (current.clips || []).map((c) => c.assembly?.kind === 'source_combine'
+            ? c
+            : { ...c, edit: { ...(c.edit || {}), burn_captions: enabled }, state: 'stale' }),
+        }
+      : current);
+    clipApi.updateProject(pid, {
+      settings: { burn_captions: enabled },
+    }).catch(() => {});
+  };
+
+  const changeTransitions = (enabled: boolean) => {
+    setTransitions(enabled);
+    setData((current) => current?.project
+      ? {
+          ...current,
+          project: {
+            ...current.project,
+            settings: { ...(current.project.settings || {}), transitions: enabled },
+          },
+        }
+      : current);
+    clipApi.updateProject(pid, {
+      settings: { transitions: enabled },
+    }).catch(() => {});
+  };
 
   // per-clip editor buffers
   const [editing, setEditing] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, any>>({});
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const multiRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
 
   const reload = useCallback(async () => {
     try {
       const d = await clipApi.project(pid);
       setData(d);
+      if (promptLoadedFor.current !== pid) {
+        setPrompt(String(d.project?.settings?.prompt || ''));
+        setDirectorPreset(String(d.project?.settings?.director_preset || d.project?.preset || 'tiktok'));
+        setSingleClip(Boolean(d.project?.settings?.single_clip));
+        setCaptions(d.project?.burn_captions ?? (d.project?.settings?.burn_captions ?? true));
+        setTransitions(d.project?.transitions ?? (d.project?.settings?.transitions ?? true));
+        promptLoadedFor.current = pid;
+      }
       setErr('');
       const t = d.transcript;
       const source: Seg[] = (t?.segments?.length ? t.segments : t?.sentences || []).map((s: any) => ({
@@ -147,6 +215,37 @@ export default function ClipProject() {
     }
   };
 
+  const clips = data?.clips || [];
+  const selected = clips.filter((c) => c.selected);
+  // The "final outcome" preview follows the selected, render-ready clip. In
+  // one-clip mode there is exactly one; otherwise prefer an assembled/combined
+  // candidate and fall back to the first selected one.
+  const previewClip = selected.find((c) => c.assembly || c.score_json?.assembly) || selected[0] || null;
+  const previewRender = previewClip?.renders?.[previewClip.renders.length - 1] || null;
+  const previewIsCombine = previewClip?.assembly?.kind === 'source_combine'
+    || previewClip?.score_json?.assembly?.kind === 'source_combine';
+  const previewResolution = previewRender?.probe?.width && previewRender?.probe?.height
+    ? `${previewRender.probe.width}×${previewRender.probe.height}` : null;
+  const autoPreviewedRef = useRef<string | null>(null);
+
+  const renderFinalPreview = async (c: ClipCandidateT) => {
+    await run('Rendering final video preview', () => clipApi.renderClip(c.id, {
+      aspect: data?.project?.aspect_ratio,
+      burn_captions: data?.project?.burn_captions,
+    }));
+  };
+
+  // In one-clip mode, render the final MP4 as soon as the candidate is ready so
+  // the user sees the actual outcome (captions/crop/transitions), not the source.
+  useEffect(() => {
+    if (!singleClip || !previewClip || jobId || busy) return;
+    if ((previewClip.renders || []).length > 0) return;
+    const key = `${previewClip.id}:${data?.project?.aspect_ratio}:${data?.project?.burn_captions}`;
+    if (autoPreviewedRef.current === key) return;
+    autoPreviewedRef.current = key;
+    renderFinalPreview(previewClip);
+  }, [singleClip, previewClip, jobId, busy, data?.project?.aspect_ratio, data?.project?.burn_captions]);
+
   const upload = async (file: File) => {
     setUploading(true);
     setErr('');
@@ -166,6 +265,60 @@ export default function ClipProject() {
     }
   };
 
+  const uploadMany = async (files: File[]) => {
+    if (!files.length) return;
+    setUploading(true);
+    setErr('');
+    try {
+      const r: any = await clipApi.uploadSources(pid, files);
+      const skipped = (r.skipped || []).length;
+      setNotice(
+        `Added ${r.added || 0} video(s) in upload order.${skipped ? ` Skipped ${skipped} duplicate(s).` : ''} ` +
+        'Existing clip candidates are marked stale until regenerated or re-combined.',
+      );
+      await reload();
+    } catch (e: any) {
+      setErr(String(e.message || e));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const moveSource = async (index: number, delta: number) => {
+    const sources = data?.project?.sources || [];
+    const target = index + delta;
+    if (target < 0 || target >= sources.length) return;
+    const ids = sources.map((s) => s.id);
+    [ids[index], ids[target]] = [ids[target], ids[index]];
+    try {
+      await clipApi.reorderSources(pid, ids);
+      setNotice('Source order updated; re-combine to apply it to the output video.');
+      await reload();
+    } catch (e: any) {
+      setErr(String(e.message || e));
+    }
+  };
+
+  const removeSource = async (sid: string) => {
+    try {
+      await clipApi.deleteSource(sid);
+      setNotice('Source removed. Re-combine to refresh the output video.');
+      await reload();
+    } catch (e: any) {
+      setErr(String(e.message || e));
+    }
+  };
+
+  const combineTarget = durations.length ? Math.min(...durations) : undefined;
+
+  const combine = async () => {
+    await run('Combining videos', () => clipApi.combine(pid, {
+      transitions,
+      target_duration: combineTarget,
+      aspect: data?.project?.aspect_ratio,
+    }));
+  };
+
   const importFile = async (file: File) => {
     setUploading(true);
     setErr('');
@@ -180,6 +333,18 @@ export default function ClipProject() {
       setErr(String(e.message || e));
     } finally {
       setUploading(false);
+    }
+  };
+
+  const importSourceFile = async (sourceId: string, file: File) => {
+    setErr('');
+    try {
+      const text = await file.text();
+      const r = await clipApi.importSourceTranscript(sourceId, text, file.name);
+      setNotice(`${file.name}: imported ${r.transcript.segments.length} cue(s) for this source.`);
+      await reload();
+    } catch (e: any) {
+      setErr(String(e.message || e));
     }
   };
 
@@ -198,15 +363,13 @@ export default function ClipProject() {
 
   const project = data?.project;
   const caps = data?.capabilities;
-  const clips = data?.clips || [];
-  const selected = clips.filter((c) => c.selected);
 
   const draft = (c: ClipCandidateT) =>
     drafts[c.id] || {
       aspect: c.edit?.aspect || project?.aspect_ratio || '9:16',
       preset: c.edit?.preset || project?.preset || 'tiktok',
       crop: c.edit?.crop || { mode: 'center' },
-      burn_captions: c.edit?.burn_captions !== false,
+      burn_captions: c.edit?.burn_captions ?? project?.burn_captions ?? true,
       fps: c.edit?.fps || 30,
       caption_style: c.edit?.caption_style || { size: 54, position: 'bottom', max_chars: 32, highlight: '#FFD166' },
       audio: c.edit?.audio || { normalize: true, music: null, music_volume: 0.18 },
@@ -230,6 +393,23 @@ export default function ClipProject() {
     setCustomDur('');
   };
 
+  const generateClips = async () => {
+    setErr('');
+    setNotice('');
+    setBusy('Scoring highlights');
+    try {
+      const r = await clipApi.highlights(pid, durations, singleClip ? 1 : count, prompt, {
+        director_preset: directorPreset,
+        single_clip: singleClip,
+      });
+      setJob(r.job);
+      setJobId(r.job.id);
+    } catch (e: any) {
+      setBusy('');
+      setErr(String(e.message || e));
+    }
+  };
+
   const header = useMemo(() => {
     if (!project) return null;
     return (
@@ -248,6 +428,7 @@ export default function ClipProject() {
             <Badge tone="slate">{project.aspect_ratio}</Badge>
             <Badge tone="slate">{project.preset}</Badge>
             <Badge tone="slate">{project.language}</Badge>
+            {singleClip ? <Badge tone="green">auto-clip · one assembled video</Badge> : null}
             {project.source && (
               <Badge tone="slate">
                 {project.source.width}×{project.source.height} · {fmtDuration(project.source.duration_sec)}
@@ -267,7 +448,7 @@ export default function ClipProject() {
         </div>
       </div>
     );
-  }, [project, data, busy, reload]);
+  }, [project, data, busy, reload, singleClip]);
 
   if (loading) {
     return (
@@ -317,13 +498,20 @@ export default function ClipProject() {
       <Panel>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="text-[15px] font-semibold text-white">1 · Source recording</h2>
+            <h2 className="text-[15px] font-semibold text-white">1 · Source videos</h2>
             <p className="mt-0.5 text-[12px] text-slate-400">
-              One source per project. Uploading again replaces the current video and clears its transcript, highlights
-              and clips.
+              Add several videos; they are combined in the order shown. Reorder with the arrows or remove a file.
+              Replacing with one video keeps the original single-source behaviour.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              data-testid="combine-target-label"
+              className="rounded-lg border border-indigo-400/30 bg-indigo-500/10 px-2.5 py-1.5 text-[11px] text-indigo-100"
+              title="Combine uses the shortest selected target duration so the final MP4 stays within every chosen timeframe"
+            >
+              Target {combineTarget ? `${combineTarget}s` : 'not set'}
+            </span>
             <input
               ref={fileRef}
               type="file"
@@ -335,47 +523,97 @@ export default function ClipProject() {
                 e.currentTarget.value = '';
               }}
             />
-            <Button variant="primary" onClick={() => fileRef.current?.click()} disabled={uploading || jobRunning}>
+            <input
+              ref={multiRef}
+              data-testid="clip-multi-upload"
+              type="file"
+              multiple
+              accept="video/mp4,video/quicktime,video/x-matroska,video/webm,.mp4,.mov,.mkv,.webm"
+              className="hidden"
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                if (files.length) uploadMany(files);
+                e.currentTarget.value = '';
+              }}
+            />
+            <Button variant="primary" onClick={() => multiRef.current?.click()} disabled={uploading || jobRunning}>
               {uploading ? <Spinner /> : null}
-              {project.source ? 'Replace video' : 'Upload video'}
+              Add videos
+            </Button>
+            <Button variant="subtle" onClick={() => fileRef.current?.click()} disabled={uploading || jobRunning}>
+              Replace all
+            </Button>
+            <Button
+              data-testid="clip-combine-button"
+              variant="ghost"
+              disabled={!project.sources || project.sources.length < 2 || jobRunning}
+              title={transitions ? 'Smooth crossfades between videos' : 'Straightforward cuts between videos'}
+              onClick={combine}
+            >
+              Combine {project.sources?.length || 0} videos ({transitions ? 'smooth' : 'cuts'})
             </Button>
           </div>
         </div>
 
-        {project.source ? (
-          <div className="mt-4 grid gap-4 lg:grid-cols-2">
-            <video
-              key={project.source.url}
-              src={clipApi.sourceUrl(pid)}
-              controls
-              preload="metadata"
-              className="w-full rounded-xl border border-white/10 bg-black"
-            />
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 self-start text-[12px]">
-              {[
-                ['File', project.source.original_name],
-                ['Container', project.source.ext],
-                ['Duration', fmtDuration(project.source.duration_sec)],
-                ['Frame', `${project.source.width}×${project.source.height} @ ${project.source.fps || '—'} fps`],
-                ['Video', project.source.vcodec || '—'],
-                ['Audio', `${project.source.acodec || '—'} · ${project.source.channels || '?'} ch · ${project.source.sample_rate || '?'} Hz`],
-                ['Size', fmtBytes(project.source.size_bytes)],
-                ['Probe', project.source.probe?.probe_source || 'unknown'],
-              ].map(([k, v]) => (
-                <div key={k as string}>
-                  <div className="text-[10px] uppercase tracking-wide text-slate-500">{k}</div>
-                  <div className="truncate text-slate-200">{v as string}</div>
+        {project.sources && project.sources.length > 0 ? (
+          <div className="mt-4 space-y-2">
+            {project.sources.map((s, i) => (
+              <div
+                key={s.id}
+                className="flex flex-wrap items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] p-2.5"
+              >
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-indigo-500/15 text-[13px] font-semibold text-indigo-200">
+                  {i + 1}
                 </div>
-              ))}
-              <div className="col-span-2">
-                <div className="text-[10px] uppercase tracking-wide text-slate-500">SHA-256 (uploaded bytes)</div>
-                <div className="break-all font-mono text-[10px] text-slate-400">{project.source.sha256}</div>
+                <video
+                  key={s.url}
+                  src={clipApi.sourceFileUrl(s.id)}
+                  muted
+                  preload="metadata"
+                  className="h-11 w-20 shrink-0 rounded-lg border border-white/10 bg-black object-cover"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[12px] font-medium text-slate-100">{s.original_name}</div>
+                  <div className="mt-0.5 truncate text-[11px] text-slate-500">
+                    {fmtDuration(s.duration_sec)} · {s.width}×{s.height} · {fmtBytes(s.size_bytes)} ·{' '}
+                    <span className="font-mono">{s.sha256.slice(0, 12)}…</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <label
+                    className="cursor-pointer rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1 text-[11px] text-slate-200 hover:bg-white/[0.07]"
+                    title="Import SRT/VTT subtitles for this source"
+                  >
+                    SRT/VTT
+                    <input
+                      type="file"
+                      accept=".srt,.vtt,text/plain"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.currentTarget.files?.[0];
+                        if (file) void importSourceFile(s.id, file);
+                        e.currentTarget.value = '';
+                      }}
+                    />
+                  </label>
+                  <Button
+                    variant="subtle"
+                    disabled={jobRunning || !s.audio_streams}
+                    onClick={() => run('Transcribing source', () => clipApi.transcribeSource(s.id))}
+                    title="Generate timed captions for this source with local ASR"
+                  >
+                    ASR
+                  </Button>
+                  <Button variant="subtle" disabled={i === 0 || jobRunning} onClick={() => moveSource(i, -1)} title="Move earlier">↑</Button>
+                  <Button variant="subtle" disabled={i === project.sources.length - 1 || jobRunning} onClick={() => moveSource(i, 1)} title="Move later">↓</Button>
+                  <Button variant="danger" disabled={jobRunning} onClick={() => removeSource(s.id)} title="Remove video">Remove</Button>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         ) : (
           <div className="mt-4">
-            <Empty title="No source yet" hint="Upload an MP4, MOV, MKV or WebM file with an audio track." />
+            <Empty title="No source yet" hint="Upload one or several MP4, MOV, MKV or WebM files with an audio track." />
           </div>
         )}
 
@@ -388,7 +626,8 @@ export default function ClipProject() {
             Run analysis
           </Button>
           <span className="text-[11px] text-slate-500">
-            Audio extraction, loudness envelope, silence gaps and scene cuts (approximate, 2 fps scan).
+            Audio extraction, loudness envelope and scene cuts use the last source in the order. Combine works on whole
+            videos in order; burned-in captions use each source's own SRT/VTT or local ASR transcript.
           </span>
         </div>
       </Panel>
@@ -553,11 +792,25 @@ export default function ClipProject() {
           <Button
             variant="primary"
             disabled={!data?.transcript || durations.length === 0 || jobRunning}
-            onClick={() => run('Scoring highlights', () => clipApi.highlights(pid, durations, count))}
+            onClick={generateClips}
           >
             Generate clips
           </Button>
         </div>
+
+        <Prompter
+          value={prompt}
+          onChange={setPrompt}
+          preset={directorPreset}
+          onPresetChange={setDirectorPreset}
+          singleClip={singleClip}
+          onSingleClipChange={changeSingleClip}
+          captions={captions}
+          onCaptionsChange={changeCaptions}
+          transitions={transitions}
+          onTransitionsChange={changeTransitions}
+          projectId={pid}
+        />
 
         <div className="mt-4 grid gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2">
@@ -578,29 +831,35 @@ export default function ClipProject() {
               ))}
               <div className="flex items-center gap-1">
                 <input
+                  data-testid="duration-custom-input"
                   value={customDur}
                   onChange={(e) => setCustomDur(e.target.value)}
                   placeholder="custom"
                   className="w-20 rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1.5 text-[12px] text-slate-200 outline-none"
                 />
-                <Button variant="subtle" onClick={addCustom}>
+                <Button data-testid="duration-custom-add" variant="subtle" onClick={addCustom}>
                   Add
                 </Button>
               </div>
             </div>
             <div className="mt-1 text-[11px] text-slate-500">
-              Selected: {durations.length ? durations.sort((a, b) => a - b).map((d) => `${d}s`).join(', ') : 'none'} ·
-              windows stay sentence-aligned between 80–130% of each target and never overlap.
+              Selected: {durations.length ? [...durations].sort((a, b) => a - b).map((d) => `${d}s`).join(', ') : 'none'} ·
+              windows stay sentence-aligned between 80–130% of each target and never overlap. The shortest selected
+              target also caps a multi-video combine, trimming the ordered sources to that final timeframe.
             </div>
           </div>
-          <Field label="Clips to return" hint="Non-overlapping; a shortfall is reported honestly">
+          <Field
+            label="Clips to return"
+            hint={singleClip ? 'One-clip mode is on: one final video is assembled from ordered transcript scenes.' : 'Non-overlapping; a shortfall is reported honestly'}
+          >
             <input
               type="number"
               min={1}
               max={12}
-              value={count}
+              value={singleClip ? 1 : count}
+              disabled={singleClip}
               onChange={(e) => setCount(Math.max(1, Math.min(12, Number(e.target.value) || 1)))}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-[13px] text-slate-100"
+              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-[13px] text-slate-100 disabled:opacity-50"
             />
           </Field>
         </div>
@@ -612,17 +871,89 @@ export default function ClipProject() {
           <div>
             <h2 className="text-[15px] font-semibold text-white">4 · Clips ({clips.length})</h2>
             <p className="mt-0.5 text-[12px] text-slate-400">
-              Edit boundaries, crop and captions per clip, then render 720p H.264/AAC.
+              Edit boundaries, captions and an optional custom crop per clip, then render native-resolution H.264/AAC.
             </p>
           </div>
           <Button
             variant="primary"
+            data-testid="clip-export-batch-button"
             disabled={!selected.length || jobRunning}
             onClick={() => run('Exporting batch', () => clipApi.exportBatch(pid, selected.map((c) => c.id), project.aspect_ratio))}
           >
             Export {selected.length} selected
           </Button>
         </div>
+
+        {previewClip && (
+          <div data-testid="clip-final-preview-panel" className="mt-4 rounded-xl border border-indigo-500/20 bg-indigo-500/[0.04] p-3">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="text-[12px] font-semibold text-indigo-100">Final video preview</div>
+                <p className="mt-0.5 text-[11px] text-slate-400">
+                  The rendered short with burned-in captions and transitions — not the raw source.
+                  {previewIsCombine
+                    ? ' Combined videos keep the first source’s native resolution and dimensions; other sizes are fitted and padded, never cropped.'
+                    : ' The full source frame is kept at its native resolution — no zooming or cutting; an explicit custom crop is still honoured.'}
+                  {selected.length > 1 ? ' Showing the first selected clip.' : ''}
+                </p>
+              </div>
+              <Button
+                variant="subtle"
+                disabled={jobRunning}
+                data-testid="clip-render-preview-button"
+                onClick={() => renderFinalPreview(previewClip)}
+              >
+                {previewRender ? 'Re-render preview' : 'Render final preview'}
+              </Button>
+            </div>
+            <div className="mt-3 grid gap-3 lg:grid-cols-2">
+              {previewRender ? (
+                <video
+                  data-testid="clip-final-preview"
+                  key={`${previewClip.id}:${previewRender.aspect_ratio}:${previewRender.url || ''}`}
+                  src={clipApi.clipFileUrl(previewClip.id, previewRender.aspect_ratio)}
+                  controls
+                  preload="metadata"
+                  className="w-full rounded-lg border border-white/10 bg-black"
+                />
+              ) : (
+                <div
+                  data-testid="clip-final-preview-pending"
+                  className="flex min-h-[180px] items-center justify-center rounded-lg border border-dashed border-white/10 bg-black/40 px-4 text-center text-[12px] text-slate-400"
+                >
+                  {jobRunning ? 'Rendering the final preview…' : 'No preview rendered yet. Use “Render final preview”.'}
+                </div>
+              )}
+              <div className="self-start text-[11px] text-slate-400">
+                <div className="truncate text-slate-200">{previewClip.title || 'Untitled clip'}</div>
+                {previewRender ? (
+                  <>
+                    <div className="mt-1">
+                      {previewRender.aspect_ratio}
+                      {previewResolution ? ` · ${previewResolution}` : ''} ·{' '}
+                      {fmtDuration(previewRender.duration_sec)} ·{' '}
+                      {fmtBytes(previewRender.size_bytes)}
+                    </div>
+                    {previewResolution && (
+                      <div data-testid="clip-final-preview-native" className="mt-1 text-indigo-200/80">
+                        Native {previewResolution} — same resolution as the exported MP4.
+                      </div>
+                    )}
+                    <a
+                      href={clipApi.clipFileUrl(previewClip.id, previewRender.aspect_ratio)}
+                      download
+                      className="mt-2 inline-block rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1 text-[11px] text-indigo-200 hover:bg-white/[0.08]"
+                    >
+                      Download preview MP4
+                    </a>
+                  </>
+                ) : (
+                  <div className="mt-1">The preview uses the same renderer as Export.</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {clips.length === 0 ? (
           <div className="mt-4">
@@ -637,6 +968,9 @@ export default function ClipProject() {
               const d = draft(c);
               const open = editing === c.id;
               const rendered = c.renders[c.renders.length - 1];
+              const assembly = c.assembly || c.score_json?.assembly;
+              const segments = c.segments || c.score_json?.segments || [];
+              const isCombine = assembly?.kind === 'source_combine';
               return (
                 <div key={c.id} className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3.5">
                   <div className="flex flex-wrap items-start justify-between gap-2">
@@ -644,10 +978,11 @@ export default function ClipProject() {
                       <div className="flex items-center gap-2">
                         <input
                           type="checkbox"
+                          data-testid={`clip-select-${c.id}`}
                           checked={c.selected}
                           onChange={async (e) => {
                             await clipApi.patchClip(c.id, { selected: e.target.checked });
-                            reload();
+                            await reload();
                           }}
                           className="h-3.5 w-3.5 accent-indigo-500"
                         />
@@ -663,6 +998,12 @@ export default function ClipProject() {
                         </span>
                         <span>· {c.duration_sec.toFixed(1)}s</span>
                         <span>· score {c.score.toFixed(0)}/100</span>
+                        {assembly && (
+                          <Badge tone="violet">
+                            {isCombine ? 'combined videos' : 'assembled'} · {segments.length} {isCombine ? 'sources' : 'scenes'}
+                          </Badge>
+                        )}
+                        {isCombine && <Badge tone="indigo">{assembly.transition_mode === 'cut' ? 'straight cuts' : 'smooth transitions'}</Badge>}
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -681,10 +1022,54 @@ export default function ClipProject() {
                   <p className="mt-2 whitespace-pre-wrap text-[12px] leading-relaxed text-slate-300">
                     {c.transcript_text}
                   </p>
+                  {assembly && segments.length > 0 && (
+                    <div className="mt-2 rounded-lg border border-violet-500/15 bg-violet-500/[0.04] px-2.5 py-2">
+                      {isCombine ? (
+                        <>
+                          <div className="text-[11px] font-medium text-violet-200/90">
+                            Combined video · {segments.length} ordered source videos ·{' '}
+                            {assembly.transition_mode === 'cut' ? 'straightforward cuts' : 'smooth crossfades'}
+                            {assembly.target_duration ? ` · ${assembly.target_duration}s target` : ''}
+                          </div>
+                          <div className="mt-1 flex flex-wrap gap-1.5">
+                            {segments.map((s: any, i: number) => (
+                              <span key={i} className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[10px] text-slate-300">
+                                {i + 1}. {s.name || 'video'} · {fmtDuration(s.duration)}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="mt-1 text-[10px] text-slate-500">
+                            Uploaded source order is authoritative; burned-in subtitles come only from each source transcript.
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-[11px] font-medium text-violet-200/90">
+                            Final video · {segments.length} ordered scenes · {assembly.narrative_arc || (segments.map((s: any) => s.role).join(' → '))}
+                          </div>
+                          <div className="mt-1 flex flex-wrap gap-1.5">
+                            {segments.map((s: any, i: number) => (
+                              <span key={i} className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[10px] text-slate-300">
+                                {i + 1}. {s.role || 'scene'} · {ts(s.start)}–{ts(s.end)} · sent {Number(s.sentence_start ?? s.start_index) + 1}–{Number(s.sentence_end ?? s.end_index) + 1}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="mt-1 text-[10px] text-slate-500">
+                            Sentence ranges are authoritative; {assembly.pause_boundaries || 0} pause and {assembly.scene_cut_boundaries || 0} scene-cut boundary cues recorded.
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
                   {c.hook && c.hook !== c.title && (
                     <p className="mt-1 text-[11px] text-indigo-200/80">Hook: {c.hook}</p>
                   )}
                   <p className="mt-1 text-[11px] text-slate-500">{c.reason}</p>
+                  {c.score_json?.params?.brief?.summary && (
+                    <p className="mt-0.5 text-[11px] text-indigo-300/80">
+                      Brief: {c.score_json.params.brief.summary}
+                    </p>
+                  )}
 
                   <div className="mt-2 grid gap-3 lg:grid-cols-2">
                     <ScoreBars clip={c} />
@@ -737,22 +1122,24 @@ export default function ClipProject() {
                   {open && (
                     <div className="mt-3 rounded-xl border border-white/[0.07] bg-slate-950/40 p-3">
                       <div className="grid gap-3 sm:grid-cols-4">
-                        <Field label="Start (s)">
+                        <Field label="Start (s)" hint={assembly ? 'Set by validated scenes' : undefined}>
                           <input
                             type="number"
                             step="0.1"
                             value={d.start_sec}
+                            disabled={!!assembly}
                             onChange={(e) => setDraft(c.id, { start_sec: Number(e.target.value) })}
-                            className="w-full rounded-lg border border-white/10 bg-slate-950/70 px-2 py-1.5 text-[12px] text-slate-200"
+                            className="w-full rounded-lg border border-white/10 bg-slate-950/70 px-2 py-1.5 text-[12px] text-slate-200 disabled:opacity-50"
                           />
                         </Field>
-                        <Field label="End (s)">
+                        <Field label="End (s)" hint={assembly ? 'Set by validated scenes' : undefined}>
                           <input
                             type="number"
                             step="0.1"
                             value={d.end_sec}
+                            disabled={!!assembly}
                             onChange={(e) => setDraft(c.id, { end_sec: Number(e.target.value) })}
-                            className="w-full rounded-lg border border-white/10 bg-slate-950/70 px-2 py-1.5 text-[12px] text-slate-200"
+                            className="w-full rounded-lg border border-white/10 bg-slate-950/70 px-2 py-1.5 text-[12px] text-slate-200 disabled:opacity-50"
                           />
                         </Field>
                         <Field label="Aspect">
@@ -822,7 +1209,7 @@ export default function ClipProject() {
                             </div>
                           )}
                           <p className="mt-1 text-[10px] text-slate-500">
-                            Fractions of the source frame. Manual geometry only — no face tracking.
+                            Fractions of the source frame. Only an explicit custom rectangle is applied — no automatic zoom/reframing and no face tracking.
                           </p>
                         </div>
 
@@ -942,9 +1329,7 @@ export default function ClipProject() {
                           onClick={async () => {
                             setBusy('Saving clip');
                             try {
-                              await clipApi.patchClip(c.id, {
-                                start_sec: d.start_sec,
-                                end_sec: d.end_sec,
+                              const patch: any = {
                                 aspect: d.aspect,
                                 preset: d.preset,
                                 crop: d.crop,
@@ -952,7 +1337,12 @@ export default function ClipProject() {
                                 audio: d.audio,
                                 burn_captions: d.burn_captions,
                                 fps: d.fps,
-                              });
+                              };
+                              if (!assembly) {
+                                patch.start_sec = d.start_sec;
+                                patch.end_sec = d.end_sec;
+                              }
+                              await clipApi.patchClip(c.id, patch);
                               setDrafts((x) => {
                                 const n = { ...x };
                                 delete n[c.id];
@@ -989,7 +1379,7 @@ export default function ClipProject() {
                           Regenerate copy
                         </Button>
                         <span className="text-[11px] text-slate-500">
-                          Titles/hooks/hashtags are extracted from the clip transcript (deterministic templates, no LLM).
+                          Titles/hooks/hashtags are extracted from the clip transcript with deterministic templates.
                         </span>
                       </div>
                     </div>

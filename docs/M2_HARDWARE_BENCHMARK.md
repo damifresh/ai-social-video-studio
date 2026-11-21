@@ -161,7 +161,7 @@ Validation checks executed on real outputs (ffmpeg-fallback probe; ffprobe binar
 | D. FFmpeg encoding presets | **NOT_RUN** (comparative) | No controlled comparison executed |
 | E. Sequential vs concurrent pipeline | **NOT_RUN** (comparative) | Sequential enforced by design for 8 GB safety |
 | F. Processing chunk sizes | **NOT_RUN** | Not varied/measured comparatively |
-| G. Optional local LLM enabled vs disabled | **NOT_RUN** | No optional local LLM path exercised |
+| G. Optional local LLM enabled vs disabled | **N/A** | The app is deterministic-only; no LLM path exists to compare |
 
 **Baseline configuration chosen (current):** sequential, disk-backed, 720p, per-scene composition, macOS `say` — consistent with observed stability on 8 GB in measured runs.
 

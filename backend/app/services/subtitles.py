@@ -40,6 +40,20 @@ def _fmt_vtt(sec: float) -> str:
     return f"{h:02d}:{m:02d}:{s:06.3f}"
 
 
+def _fmt_ass(sec: float) -> str:
+    """Format seconds as an ASS timestamp: H:MM:SS.cc (centiseconds).
+
+    libass silently drops Dialogue lines whose timestamps use 3 decimal
+    places (SRT/VTT style). ASS requires exactly two centisecond digits.
+    """
+    sec = max(0.0, float(sec))
+    cs = int(round(sec * 100))
+    h, cs = divmod(cs, 360000)
+    m, cs = divmod(cs, 6000)
+    s, cs = divmod(cs, 100)
+    return f"{h}:{m:02d}:{s:02d}.{cs:02d}"
+
+
 def parse_ts(raw: str) -> float:
     raw = raw.strip().replace(",", ".")
     parts = raw.split(":")
@@ -213,7 +227,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         if not text:
             continue
         lines.append(
-            f"Dialogue: 0,{_fmt_vtt(seg['start'])},{_fmt_vtt(seg['end'])},Default,,0,0,0,,{_ass_text(text, st)}\n"
+            f"Dialogue: 0,{_fmt_ass(seg['start'])},{_fmt_ass(seg['end'])},Default,,0,0,0,,{_ass_text(text, st)}\n"
         )
     out_path.write_text("".join(lines), encoding="utf-8")
     return out_path

@@ -48,13 +48,35 @@ def _from_ffprobe(path: Path, exe: str) -> dict:
         fps = float(num) / float(den) if float(den) else 0.0
     except Exception:
         fps = 0.0
+    # ffprobe reports the coded width/height and carries orientation separately
+    # in side data. Combiners need the dimensions as actually displayed, or a
+    # 90/270-degree source becomes a letterboxed landscape canvas.
+    width = int(video.get("width") or 0)
+    height = int(video.get("height") or 0)
+    rotation = 0.0
+    for side in video.get("side_data_list") or []:
+        if isinstance(side, dict) and side.get("rotation") is not None:
+            try:
+                rotation = float(side["rotation"])
+            except (TypeError, ValueError):
+                pass
+            break
+    if not rotation:
+        try:
+            rotation = float((video.get("tags") or {}).get("rotate") or 0)
+        except (TypeError, ValueError):
+            rotation = 0.0
+    swapped = bool(rotation) and round(abs(rotation)) % 180 == 90
     return {
         "probe_source": "ffprobe",
+        "rotation": rotation,
+        "display_width": height if swapped else width,
+        "display_height": width if swapped else height,
         "duration": float(video.get("duration") or fmt.get("duration") or 0.0),
         "video_duration": float(video.get("duration") or 0.0) or None,
         "audio_duration": float(audio.get("duration") or 0.0) or None,
-        "width": int(video.get("width") or 0),
-        "height": int(video.get("height") or 0),
+        "width": width,
+        "height": height,
         "fps": round(fps, 3),
         "video_codec": (video.get("codec_name") or "").lower(),
         "audio_codec": (audio.get("codec_name") or "").lower(),
@@ -97,6 +119,15 @@ def _from_ffmpeg(path: Path) -> dict:
         pix = re.search(r"Video:\s*\S+(?:\s*\([^)]*\))?,\s*([A-Za-z0-9_]+(?:\([^)]*\))?)", vline)
         if pix:
             out["pix_fmt"] = pix.group(1).strip()
+    # The ffmpeg fallback sees coded dimensions too; honour a rotation side
+    # data line when it is printed so combine picks the displayed canvas.
+    rm = re.search(r"rotation of\s*(-?\d+(?:\.\d+)?)\s*degrees", err, re.I)
+    rotation = float(rm.group(1)) if rm else 0.0
+    vw, vh = int(out.get("width") or 0), int(out.get("height") or 0)
+    swapped = bool(rotation) and round(abs(rotation)) % 180 == 90
+    out["rotation"] = rotation
+    out["display_width"] = vh if swapped else vw
+    out["display_height"] = vw if swapped else vh
     a = re.search(r"Audio: ([^,\s]+)(?:[^,]*), (\d+) Hz, ([^,]+)", err)
     if a:
         out["audio_codec"] = a.group(1).strip().lower()

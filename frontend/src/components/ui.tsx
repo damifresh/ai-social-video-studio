@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ButtonHTMLAttributes, ReactNode } from 'react';
 
 export function Panel({ children, className = '' }: { children: ReactNode; className?: string }) {
   return <div className={`panel ${className}`}>{children}</div>;
@@ -12,6 +12,7 @@ export function Button({
   className = '',
   title,
   type = 'button',
+  ...rest
 }: {
   children: ReactNode;
   onClick?: () => void;
@@ -20,7 +21,7 @@ export function Button({
   className?: string;
   title?: string;
   type?: 'button' | 'submit';
-}) {
+} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'className' | 'onClick' | 'disabled' | 'title' | 'type'>) {
   const styles: Record<string, string> = {
     primary: 'bg-gradient-to-b from-indigo-500 to-indigo-600 hover:from-indigo-400 hover:to-indigo-500 text-white shadow-lg shadow-indigo-950/40 border border-indigo-400/30',
     ghost: 'bg-white/[0.04] hover:bg-white/[0.09] text-slate-200 border border-white/10',
@@ -29,6 +30,7 @@ export function Button({
   };
   return (
     <button
+      {...rest}
       type={type}
       title={title}
       onClick={onClick}

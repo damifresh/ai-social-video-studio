@@ -33,6 +33,25 @@ def clip_paths(project_id: str) -> dict[str, Path]:
     }
 
 
+def source_artifact_dir(project_id: str, source_id: str) -> Path:
+    """Per-source analysis artifacts (transcript + audio) for multi-source jobs."""
+    d = clip_paths(project_id)["analysis"] / "sources" / str(source_id)
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def source_transcript_path(project_id: str, source_id: str) -> Path:
+    return source_artifact_dir(project_id, source_id) / "transcript.json"
+
+
+def source_whisper_path(project_id: str, source_id: str) -> Path:
+    return source_artifact_dir(project_id, source_id) / "whisper_output.json"
+
+
+def source_audio_path(project_id: str, source_id: str) -> Path:
+    return source_artifact_dir(project_id, source_id) / "audio16k.wav"
+
+
 def write_json(path: Path, data) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")

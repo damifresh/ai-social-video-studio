@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Callable
 
 from ..core.config import resolve_whisper_bin, resolve_whisper_model
-from ..services.subtitles import parse_srt, split_chunks
+from ..services.subtitles import parse_srt
 
 LANGUAGES = {"auto", "en", "es", "fr", "de", "it", "pt", "nl", "hi", "ja", "ko", "zh"}
 TERMINAL = re.compile(r"(?:[.!?。！？]['\")\]]?)$")
@@ -195,11 +195,13 @@ def transcribe(
         cmd = [cap["bin_path"], "-m", cap["model_path"], "-f", str(audio_wav),
                "-of", str(prefix), "-l", lang, "--print-progress"] + extra
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        progress_line = ""
+        err_lines: list[str] = []
         assert proc.stderr is not None
         for line in proc.stderr:
-            progress_line = line.strip()
-            m = re.search(r"progress\s*=\s*(\d+)%", progress_line)
+            # Consume the stream while iterating; reading it again afterwards
+            # would yield an empty error on a non-zero exit.
+            err_lines.append(line.rstrip())
+            m = re.search(r"progress\s*=\s*(\d+)%", line.strip())
             if m and on_progress:
                 on_progress(min(99, int(m.group(1))), "Transcribing audio")
             if check:
@@ -209,30 +211,48 @@ def transcribe(
                     proc.kill()
                     raise
         proc.wait()
+        last_err = "".join(err_lines) or f"exit {proc.returncode}"
         produced = prefix.with_suffix(".json")
         if proc.returncode == 0 and produced.exists():
-            data = json.loads(produced.read_text(encoding="utf-8", errors="replace"))
-            segments, words = _parse_whisper_json(data, lang)
-            if not segments:
-                raise RuntimeError("whisper.cpp produced JSON without segments")
-            native_words = bool(words)
-            if not words:
-                words = _estimated_words(segments)
-            sentences = build_sentences(words, join_with="" if lang in NO_SPACE_LANGS else " ")
-            return {
-                "backend": "whisper_cpp",
-                "model": cap["model"],
-                "language": lang,
-                "timing": "native",
-                "word_timing": "native" if native_words else "estimated",
-                "segments": segments,
-                "sentences": sentences,
-                "words": words,
-                "notes": [] if native_words else [
-                    "Word timings estimated proportionally within ASR segments (segment timings are native)."
-                ],
-            }
-        last_err = (proc.stderr.read() if proc.stderr else "") or f"exit {proc.returncode}"
+            try:
+                data = json.loads(produced.read_text(encoding="utf-8", errors="replace"))
+            except (OSError, ValueError) as exc:
+                last_err = f"invalid whisper.cpp JSON: {exc}"
+            else:
+                segments, words = _parse_whisper_json(data, lang)
+                if not segments:
+                    # whisper.cpp writes a valid JSON with an empty
+                    # "transcription" array when the audio has no speech. That
+                    # is a normal result, not a failure: callers turn it into a
+                    # "no captions generated" notice without failing the job.
+                    return {
+                        "backend": "whisper_cpp",
+                        "model": cap["model"],
+                        "language": lang,
+                        "timing": "native",
+                        "word_timing": None,
+                        "segments": [],
+                        "sentences": [],
+                        "words": [],
+                        "notes": ["No speech detected by whisper.cpp; no timed captions generated."],
+                    }
+                native_words = bool(words)
+                if not words:
+                    words = _estimated_words(segments)
+                sentences = build_sentences(words, join_with="" if lang in NO_SPACE_LANGS else " ")
+                return {
+                    "backend": "whisper_cpp",
+                    "model": cap["model"],
+                    "language": lang,
+                    "timing": "native",
+                    "word_timing": "native" if native_words else "estimated",
+                    "segments": segments,
+                    "sentences": sentences,
+                    "words": words,
+                    "notes": [] if native_words else [
+                        "Word timings estimated proportionally within ASR segments (segment timings are native)."
+                    ],
+                }
         if "unknown argument" not in last_err.lower() and "invalid option" not in last_err.lower():
             break
     raise RuntimeError(f"whisper.cpp failed: {last_err[-500:]}")
@@ -306,32 +326,80 @@ def import_transcript(content: str, filename: str = "", duration: float = 0.0) -
 
 
 def caption_segments(transcript: dict, start: float, end: float, max_chars: int = 42) -> list[dict]:
-    """Clip-relative caption cues built from the clip's own transcript text."""
+    """Clip-relative caption cues aligned to the words actually spoken.
+
+    When word-level timing is present (native ASR or estimated from a timed
+    SRT/VTT), each cue's start/end come from its constituent words, clipped to
+    the requested range. This prevents a clipped sentence from displaying its
+    full text from the clip's first frame — words spoken before the clip began
+    no longer appear early, and words after it ended no longer linger.
+    """
     if not transcript or transcript.get("timing") == "none":
         return []
-    sentences = transcript.get("sentences") or []
+    words = transcript.get("words") or []
+    if not words:
+        # Timed sentences without explicit word offsets (e.g. legacy cached
+        # transcripts) get proportional word timings from their own text.
+        sentences = transcript.get("sentences") or []
+        if not sentences:
+            return []
+        words = _estimated_words(sentences)
+    if not words:
+        return []
+    start, end = float(start), float(end)
+    join_with = "" if transcript.get("language") in NO_SPACE_LANGS else " "
+
+    # Keep only words that overlap the clip range, preserving source times.
+    selected: list[dict] = []
+    for word in words:
+        try:
+            w0, w1 = float(word["start"]), float(word["end"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        text = str(word.get("text") or "").strip()
+        if not text or w1 <= start or w0 >= end:
+            continue
+        selected.append({"start": w0, "end": w1, "text": text})
+    if not selected:
+        return []
+
+    # Group into display chunks, breaking at sentence punctuation or pauses
+    # and never exceeding max_chars. Word timings stay attached to each chunk.
+    groups: list[list[dict]] = []
+    current: list[dict] = []
+    for word in selected:
+        if current:
+            prev = current[-1]
+            sentence_end = bool(TERMINAL.search(prev["text"]))
+            pause = word["start"] - prev["end"]
+            candidate = join_with.join(w["text"] for w in current + [word])
+            if sentence_end or pause > 0.75 or len(candidate) > max_chars:
+                groups.append(current)
+                current = []
+        current.append(word)
+    if current:
+        groups.append(current)
+
     cues: list[dict] = []
-    for s in sentences:
-        s0, s1 = float(s["start"]), float(s["end"])
-        if s1 <= start or s0 >= end:
+    for group in groups:
+        c0 = max(start, group[0]["start"])
+        c1 = min(end, group[-1]["end"])
+        if c1 - c0 < 0.05:
             continue
-        text = s["text"]
-        cs, ce = max(s0, start), min(s1, end)
-        chunks = split_chunks(text, max_chars)
-        if not chunks:
-            continue
-        dur = max(0.2, ce - cs)
-        total_chars = sum(len(c) for c in chunks) or 1
-        cursor = cs
-        for c in chunks:
-            span = dur * len(c) / total_chars
-            cues.append({
-                "start": round(cursor - start, 3),
-                "end": round(min(end, cursor + span) - start, 3),
-                "text": c,
-            })
-            cursor += span
-    return [c for c in cues if c["end"] > c["start"]]
+        cues.append({
+            "start": round(c0 - start, 3),
+            "end": round(c1 - start, 3),
+            "text": join_with.join(w["text"] for w in group),
+            # Word-level detail (clip-relative) lets combine renders trim
+            # captions at crossfade boundaries without cutting mid-word.
+            "_words": [
+                {"start": round(w["start"] - start, 3),
+                 "end": round(w["end"] - start, 3),
+                 "text": w["text"]}
+                for w in group
+            ],
+        })
+    return [cue for cue in cues if cue["end"] > cue["start"]]
 
 
 def save_transcript(path: Path, transcript: dict) -> Path:

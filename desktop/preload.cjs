@@ -4,7 +4,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 /**
  * Minimal, allowlisted bridge. The renderer never gets Node or arbitrary IPC:
- * only these five calls cross the boundary, and the main process validates
+ * only these allowlisted calls cross the boundary, and the main process validates
  * every path/link again on its side.
  */
 contextBridge.exposeInMainWorld('desktop', {

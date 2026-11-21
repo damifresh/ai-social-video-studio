@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { clipApi, ClipCapabilitiesT, ClipProjectT, fmtBytes, fmtDuration } from '../lib/api';
 import { Alert, Badge, Button, Empty, Field, Panel, SectionTitle, Spinner, statusTone } from '../components/ui';
+import Prompter from '../components/Prompter';
 
 const ASPECTS = [
   { id: '9:16', label: '9:16 Vertical', hint: 'TikTok, Reels, Shorts' },
@@ -33,6 +34,11 @@ export default function ClipStudio() {
   const [title, setTitle] = useState('');
   const [aspect, setAspect] = useState('9:16');
   const [language, setLanguage] = useState('en');
+  const [prompt, setPrompt] = useState('');
+  const [directorPreset, setDirectorPreset] = useState('tiktok');
+  const [singleClip, setSingleClip] = useState(false);
+  const [captions, setCaptions] = useState(true);
+  const [transitions, setTransitions] = useState(true);
 
   const load = async () => {
     try {
@@ -64,7 +70,12 @@ export default function ClipStudio() {
         title: title.trim() || 'Untitled clip project',
         aspect_ratio: aspect,
         preset,
+        director_preset: directorPreset,
+        single_clip: singleClip,
+        burn_captions: captions,
+        transitions,
         language,
+        prompt,
       });
       nav(`/clip/${r.project.id}`);
     } catch (e: any) {
@@ -80,7 +91,7 @@ export default function ClipStudio() {
     <div className="space-y-6">
       <SectionTitle
         title="AI Auto-Clip Studio"
-        subtitle="Turn one long recording into short, captioned vertical clips — fully local."
+        subtitle="Turn one long recording — or several videos combined into one — into short, captioned vertical clips, fully local."
         right={
           <Badge tone="violet">Engine B · local only</Badge>
         }
@@ -94,8 +105,8 @@ export default function ClipStudio() {
             <div>
               <h2 className="text-[15px] font-semibold text-white">New clip project</h2>
               <p className="mt-1 text-[12px] text-slate-400">
-                Upload an MP4/MOV/MKV/WebM recording. The original file is stored untouched; hashes and
-                stream metadata are recorded for audit.
+                Upload an MP4/MOV/MKV/WebM recording, or several videos to combine into one seamless output.
+                Original files are stored untouched; hashes and stream metadata are recorded for audit.
               </p>
             </div>
             <Badge tone="slate">720p output</Badge>
@@ -200,6 +211,19 @@ export default function ClipStudio() {
           </div>
         </Panel>
       </div>
+
+      <Prompter
+        value={prompt}
+        onChange={setPrompt}
+        preset={directorPreset}
+        onPresetChange={setDirectorPreset}
+        singleClip={singleClip}
+        onSingleClipChange={setSingleClip}
+        captions={captions}
+        onCaptionsChange={setCaptions}
+        transitions={transitions}
+        onTransitionsChange={setTransitions}
+      />
 
       <Panel>
         <div className="flex items-center justify-between">

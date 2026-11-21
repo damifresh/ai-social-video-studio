@@ -166,11 +166,11 @@ def _run_single_video_creator_case(case: dict[str, Any], suite_run: dict[str, An
 
 
 def _build_unavailable_sections() -> dict[str, Any]:
-    na = "Not implemented in this application build; no fabricated measurements."
+    na = "Not measured by this Engine A baseline; use the dedicated Engine B suites."
     return {
         "auto_clip_results": {
-            "status": "NOT_IMPLEMENTED",
-            "reason": "Engine B (AI Auto-Clip Studio) is not present in this codebase (no import/upload, proxy, transcription pipeline, highlight extraction, clip render/subtitle workflow, or UI/API).",
+            "status": "NOT_RUN",
+            "reason": "Engine B (AI Auto-Clip Studio) is implemented, but this baseline suite measures Engine A only. Engine B is verified by scripts/engine_b_e2e.py and scripts/engine_b_longrun.py.",
             "tests": [
                 {"id": "A1", "duration": "1 min", "status": "NOT_RUN", "reason": na},
                 {"id": "A2", "duration": "5 min", "status": "NOT_RUN", "reason": na},
@@ -181,14 +181,14 @@ def _build_unavailable_sections() -> dict[str, Any]:
         },
         "transcription_accuracy": {
             "status": "NOT_RUN",
-            "reason": "Whisper.cpp Tiny/Base binaries/models and manually verified ground-truth transcripts/reference audio-video datasets are not installed/provided in this environment; WER and alignment accuracy cannot be honestly computed.",
+            "reason": "WER is measured by scripts/engine_b_asr_wer.py, not by this Engine A baseline. Human-speech reference datasets and alignment ground truth remain unavailable.",
             "models_tested": [],
         },
         "highlight_quality": {
             "status": "NOT_RUN",
-            "reason": "No AI highlight extraction engine, no human-reviewed reference highlight set, and no human reviewer ratings collected; precision/recall/quality scores cannot be fabricated.",
+            "reason": "Engine B provides transparent highlight scoring, but no human-reviewed reference highlight set or reviewer ratings were collected; precision/recall/quality scores cannot be fabricated.",
         },
-        "export_quality": {"status": "PARTIAL", "notes": "Engine A export validation (ffprobe checks) executed for generated videos. Engine B clip exports (9:16/16:9/1:1 from uploaded sources) not applicable."},
+        "export_quality": {"status": "PARTIAL", "notes": "Engine A export validation (ffprobe checks) executed for generated videos. Engine B clip exports (9:16/16:9/1:1 from uploaded sources) are validated in the separate Engine B acceptance suite."},
         "video_creator_results": {},
         "memory_performance": {},
         "stability_results": {"status": "PARTIAL", "notes": "Baseline generation runs executed with metric sampling. Full repeated/cancel/restart/recovery stress matrix not fully automated in this baseline run unless explicitly included."},
@@ -219,7 +219,7 @@ def _classification_for_run(tests: list[dict[str, Any]]) -> list[dict[str, Any]]
     for mins, label in [(1, "1-minute 720p generation"), (3, "3-minute 720p generation"), (5, "5-minute 720p generation")]:
         status, note = cls(mins)
         out.append({"engine": "AI_VIDEO_CREATOR", "workload": label, "status": status, "notes": note})
-    out.append({"engine": "AI_AUTO_CLIP_STUDIO", "workload": "All auto-clip/transcription/highlight workloads", "status": "NOT_RECOMMENDED_ON_THIS_HARDWARE", "notes": "Engine not implemented in this app; capability cannot be assessed from measured runs."})
+    out.append({"engine": "AI_AUTO_CLIP_STUDIO", "workload": "All auto-clip/transcription/highlight workloads", "status": "NOT_MEASURED_IN_THIS_SUITE", "notes": "Engine B is implemented and measured by separate acceptance/long-source suites; this Engine A baseline does not classify its capability."})
     return out
 
 
@@ -252,7 +252,7 @@ def run_engine_a_baseline(cases: list[dict[str, Any]] | None = None, title: str 
             },
             "repeatability": "Fixed per-case config recorded in each test; background workload not strictly isolated.",
             "engines_in_scope": ["AI_VIDEO_CREATOR"],
-            "engines_out_of_scope": ["AI_AUTO_CLIP_STUDIO (not implemented)"],
+            "engines_out_of_scope": ["AI_AUTO_CLIP_STUDIO (measured separately by scripts/engine_b_e2e.py)"],
         },
         "tests": [],
         "samples": [],
@@ -287,7 +287,7 @@ def run_engine_a_baseline(cases: list[dict[str, Any]] | None = None, title: str 
         }
         run["sections"]["export_quality"] = {
             "engine_a": {"status": "PASS" if export_checks and all(e.get("ok") for e in export_checks) else ("WARNING" if export_checks else "NOT_RUN"), "validations": export_checks},
-            "engine_b": {"status": "NOT_RUN", "reason": "AI Auto-Clip Studio not implemented."},
+            "engine_b": {"status": "NOT_RUN", "reason": "Not measured by this Engine A baseline; see scripts/engine_b_e2e.py for measured clip exports."},
         }
         peaks = [t.get("peak_app_rss_mb") for t in tests if isinstance(t.get("peak_app_rss_mb"), (int, float))]
         swaps = [t.get("swap_used_mb_peak") for t in tests if isinstance(t.get("swap_used_mb_peak"), (int, float))]
@@ -321,11 +321,11 @@ def run_engine_a_baseline(cases: list[dict[str, Any]] | None = None, title: str 
         run["sections"]["hardware_capability_classification"] = _classification_for_run(tests)
         run["sections"]["final_assessment"] = {
             "engine_a": "Measured baseline shows Engine A can generate 720p animated-graphics videos locally on M2 8GB in tested cases (see per-test status).",
-            "engine_b": "Engine B (AI Auto-Clip Studio) is not implemented; no auto-clip/transcription/highlight capability to classify from measurement.",
-            "overall": "PARTIAL — Engine A benchmarked with real runs; Engine B and requested auto-clip/transcription/highlight/accuracy datasets not available.",
+            "engine_b": "Engine B (AI Auto-Clip Studio) is implemented and verified in a separate acceptance suite; this Engine A baseline does not classify its capability.",
+            "overall": "PARTIAL — Engine A benchmarked here; Engine B measured by dedicated suites, while human-reviewed highlight and alignment datasets remain unavailable.",
         }
         run["sections"]["known_limitations"] = [
-            "AI Auto-Clip Studio (Engine B) not implemented in this build.",
+            "Engine B (AI Auto-Clip Studio) is out of scope for this baseline; its measurements come from separate suites.",
             "No Whisper.cpp Tiny/Base installed and no manually verified ground-truth transcripts; WER/alignment not measured.",
             "No human-reviewed highlight reference set or human ratings; highlight quality metrics not measured.",
             "GPU/Metal utilization not reliably sampled without privileged powermetrics; reported as unavailable.",
@@ -336,7 +336,7 @@ def run_engine_a_baseline(cases: list[dict[str, Any]] | None = None, title: str 
             "overall_status": overall,
             "total": len(tests), "pass": passed, "warning": warned, "fail": failed,
             "measurement_sources": run["methodology"]["metrics_sources"],
-            "report_note": "Measured results only; unimplemented/unavailable tests recorded as NOT_RUN/NOT_IMPLEMENTED.",
+            "report_note": "Measured results only; unavailable and out-of-scope tests are recorded as NOT_RUN rather than implying a missing feature.",
         }
         run["status"] = "completed"
     except Exception as e:

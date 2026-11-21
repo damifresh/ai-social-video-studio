@@ -26,7 +26,7 @@
 - Job `stage/progress/message/error` persisted in SQLite and shown in UI (real state, not fake percentages).
 - Pipeline logs: `data/projects/<id>/logs/pipeline.log`.
 - Measure with Activity Monitor / `vm_stat` / `/usr/bin/time -l` during acceptance tests; record peak RSS/unified memory pressure.
-- On OOM or crash: re-run generation; completed per-scene artifacts remain on disk. (Full automatic resume-from-stage is incremental; current behavior is safe/idempotent per output file.)
+- On OOM or crash: re-run generation or use Re-render; completed per-scene artifacts remain on disk. `backend/app/services/resume.py` records input signatures in `resume.json`, and Re-render skips only stages whose signature still matches and whose artifacts are present. Startup still marks interrupted jobs rather than auto-starting them, so the user remains in control of re-triggering work.
 
 ## Verified measurements (Apple M2 / 8 GB, macOS 27.0.1)
 

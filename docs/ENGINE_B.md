@@ -26,10 +26,13 @@ never share tables, files or job rows.
 | Transcript import (SRT / VTT / plain text) | Working | `B3-IMPORT` (15 cues, monotonic, timings labelled "file", word timings labelled "estimated") |
 | Transcript editing in-app | Working | `PUT /api/clip/projects/{id}/transcript` rebuilds sentence boundaries |
 | Highlight scoring with auditable weights | Working | `B4-HIGHLIGHTS`: every clip stores per-component raw/weight/contribution + reason |
+| Director/prompter (deterministic) | Working | Shared on the Auto-Clip Studio category page and inside projects; five built-in set prompts plus free text. `prompt.py` parses the brief into transparent scoring rules and `direction.py` builds the deterministic plan (preset, target durations, one-clip assembly metadata). No model, network call or desktop LLM bridge. Plan stored in job `meta`; brief, rules, weights, components and grounded copy on each candidate's `score_json` (including `brief_fit`). Opt-in **One clip** mode composes one final video from 2–6 ordered transcript sentence ranges with roles; silence gaps and scene cuts are boundary support, transcript ranges remain authoritative, and `render_assembly()` concatenates them into exactly one selected, render-ready candidate with a `0 → total duration` timeline. Short sources clamp transcript/structural boundaries and the target to the uploaded duration (or emit one grounded scene with a notice) and legacy candidates are clamped at render time. Verified by 51 unit tests (including real FFmpeg assembly and short-source regressions), real API runs, and 25/25 Electron UI smoke checks |
 | Non-overlapping, sentence-aligned clip windows | Working | Overlap ≤ 0.2 s tolerance; shortfall reported instead of duplicating spans |
-| Render 720p H.264/AAC in 9:16, 16:9, 1:1 | Working | `B5-RENDER`: probes show 720×1280, 1280×720, 720×720; validation includes A/V sync |
+| Render H.264/AAC at native source resolution | Working | `B5-RENDER`: output probes report the source's own dimensions (default fixture 1280×720); presets 9:16 / 16:9 / 1:1 remain file keys, validation includes A/V sync |
+| Multi-scene one-video assembly | Working | `render_assembly()` trims and concatenates 2–6 ordered transcript ranges in director order, remaps caption cues to the assembled timeline, and applies the same native fit-and-pad/captions/loudness/ducking chain; one selected candidate is render-ready and boundary patches are rejected |
+| Multi-video combine (one seamless MP4, smooth or cut) | Working | Append several videos in user-defined order; `render_combine()` joins them with FFmpeg `xfade`/`acrossfade` (default 0.6 s, capped 0.1–1.5 s) or plain `concat`. The shortest selected Target duration trims all ordered sources proportionally (fade overlap included) so the final MP4 respects the timeframe; omissions keep legacy whole-source behaviour. One selected, render-ready `source_combine` candidate with audited order/transition/duration metadata; no transcript copy invented. Combine output keeps the first ordered source's native pixel dimensions at visually lossless quality; differently sized sources are fitted and padded, never cover-cropped. Verified by unit tests (incl. real 2-/3-source FFmpeg renders, native-resolution and mixed-size padding, targeted trims) and the Electron smoke |
 | Captions burned per clip | Working | ASS cues generated from the clip's own transcript sentences (28 cues in the measured 44 s clip) |
-| Manual crop / reframe | Working | Centred cover-crop or manual rect; deterministic geometry only |
+| Explicit custom crop | Working | Only a user-entered rectangle crops; no automatic cover-crop/zoom; deterministic geometry only |
 | Automatic face/subject tracking | **Not implemented** | No model is bundled, no tracking is claimed in UI or API |
 | Loudness normalisation, optional ducked music | Working | `loudnorm=I=-16:TP=-1.5:LRA=11` + sidechain ducking; measured ≈ −16 LUFS |
 | Transcript-grounded title/hook/caption/hashtags | Working | Deterministic `transcript-template/v1`; each field verified as a substring/token of the clip text |
@@ -58,11 +61,14 @@ criteria, constraints, UI, API/backend, documentation.
   transcoded or rewritten, so it can be re-downloaded byte-identical.
 - **Acceptance:** all four containers upload; stored SHA-256 equals uploaded SHA-256;
   probe returns duration/width/height/fps/codecs; unsupported container → 415.
-- **Constraints:** one source per clip project. Uploading again requires
-  `replace_existing=true` (default) and clears the previous source, analysis, transcript
-  and clips, because their timings refer to the old file. `replace_existing=false`
-  returns 409.
-- **UI:** step 1 panel — upload/replace, inline video preview, metadata grid, hash.
+- **Constraints:** the single-source endpoint keeps its original replace semantics:
+  uploading again requires `replace_existing=true` (default) and clears the previous
+  source, analysis, transcript and clips, because their timings refer to the old file.
+  `replace_existing=false` returns 409. To keep several videos, use the additive
+  multi-source endpoint (§ B5a); it never replaces existing sources, skips exact
+  SHA-256 duplicates, and marks existing candidates stale until regenerated or re-combined.
+- **UI:** step 1 panel — add several videos, reorder/remove them, or replace them all with
+  one source (original behaviour); inline previews, metadata grid, hash.
 - **API/backend:** `POST /api/clip/projects/{id}/source`, `GET .../source/file`,
   `GET /api/clip/sources/{sid}/file`; `app/clip/api.py`, `app/clip/probe.py`.
 - **Docs:** this section + `TROUBLESHOOTING.md` (no-audio/unsupported container).
@@ -122,40 +128,178 @@ criteria, constraints, UI, API/backend, documentation.
 - **Acceptance:** clips are sentence-aligned; zero overlaps beyond 0.2 s; every clip has a
   score, components and reason; titles/hooks are substrings of the clip's own text;
   shortfall is stated when fewer clips fit than requested.
-- **Constraints:** heuristic clip-worthiness, not a virality predictor; no LLM; no
-  reference ranking exists, so precision/recall is not claimed.
-- **UI:** step 3 — duration chips 15/30/45/60/90 + custom (5–180 s, max 6 targets),
-  count 1–12, per-clip score bars and reason.
-- **API/backend:** `POST /api/clip/projects/{id}/highlights`,
-  `GET /api/clip/projects/{id}/clips`; `app/clip/highlights.py`.
-- **Docs:** weights are printed in the UI and stored per clip.
+- **Constraints:** heuristic clip-worthiness, not a virality predictor; no LLM in
+  the scorer; no reference ranking exists, so precision/recall is not claimed.
+- **UI:** the prompter with five built-in set prompts, free text, three suggestion chips,
+  an opt-in **One clip** toggle and a **Preview** button is available
+  on the Auto-Clip Studio category page and in project step 3; the category choice is carried into
+  new projects and project changes are persisted. Step 3 also has duration chips 15/30/45/60/90 +
+  custom (5–180 s, max 6 targets), count 1–12 (disabled at 1 in one-clip mode), per-clip score bars,
+  reason, the validated plan summary, and ordered scene chips with source ranges and boundary cues
+  for assembled candidates.
+- **API/backend:** `GET /api/clip/prompt/presets`, `POST /api/clip/prompt/parse` (preview only),
+  `POST /api/clip/projects/{id}/direction/preview`,
+  `POST /api/clip/projects/{id}/highlights` with optional `prompt`/`director_preset`/`single_clip`,
+  `GET /api/clip/projects/{id}/clips`; `app/clip/direction.py`, `app/clip/prompt.py`, `app/clip/highlights.py`.
+- **Docs:** weights and parsed rules are printed in the UI and stored per clip.
+
+#### B4a · Director/prompter (deterministic, transcript-grounded plan)
+
+- **Goal:** let a creator describe the desired outcome in plain English (or choose one of five
+  built-in set prompts) and have the local director parse it into transparent scoring rules and
+  target durations without inventing any copy.
+- **Engine:** B (`direction.py` plan builder, `prompt.py` rule parser, highlight reweighting). No
+  model, network call or desktop LLM bridge is involved.
+- **Behaviour:** `prompt.parse()` converts the preset instruction plus free-text brief into an
+  auditable brief (tone, platform, audience, keywords, avoid list, length hint, bounded weight
+  multipliers and human-readable rules). `direction.deterministic_plan()` combines that brief with
+  explicit UI durations (falling back to the prompt's length hint, then 30 s) and records the
+  preset and engine. The plan is stored in job `meta`, and the brief, rules, weights, components
+  and grounded copy in each candidate's `score_json` (including `brief_fit`). Copy always comes
+  from `transcript-template/v1` and is verified against the clip's own transcript.
+  With `single_clip`, the plan adds assembly metadata (`mode`, `target_seconds`, boundary
+  authority and counted silence gaps / scene cuts). Silence gaps and visual scene cuts are
+  included as boundary/support evidence, but transcript sentence ranges remain the authority.
+  Scoring forces one candidate whose `segments` retain source ranges while its timeline runs
+  `0 → total duration`, and `render_assembly()` concatenates those ranges into one captioned MP4.
+  Boundary patches on the assembled candidate are rejected by `PATCH /api/clip/clips/{id}`. When
+  the transcript outlives a short upload, generation clamps all transcript/structural boundaries
+  and the target to the source duration and records `clamped_to_source_duration`; with only one
+  usable sentence it emits one grounded scene plus a notice (zero usable sentences remains a hard
+  error). Render-time clamping also keeps older candidates inside the file, so short sources no
+  longer raise `Source is too short for transcript-grounded assembly` or
+  `Assembly segment extends outside the source duration`.
+- **Acceptance:** unchanged or empty prompts preserve the default eight-weight scoring; a
+  non-empty prompt yields an auditable `brief` plus `brief_fit` on every candidate; verified with
+  `backend/tests/test_clip_prompt.py`, `test_clip_direction.py`, `test_clip_render.py`,
+  `test_clip_combine.py`, `test_clip_captions.py` and `test_caption_sync.py` (51 unit tests total,
+  including real two-scene FFmpeg assembly, two-/three-source combine renders, caption-sync and
+  short-source regressions), real API runs for both scoring modes, 25/25 Electron UI checks, and a
+  25/25 packaged-app rerun, including the 2 s final-preview source, ordered scene metadata and
+  guarded boundary edits.
+- **Constraints:** no model or external service is consulted. No reference ranking exists, and
+  the director cannot invent title/hook/caption/hashtag text; it is not a virality predictor.
 
 ### B5 · Reframing, captions, audio, render
 
-- **Goal:** platform-ready 720p MP4 per clip, with honest geometry.
+- **Goal:** platform-ready MP4 per clip at the source's native pixel size, with honest geometry.
 - **Engine:** B (`render` / `batch_export` jobs).
 - **Behaviour:**
-  - crop: centred cover-crop by default; modes `center/left/right/top/bottom/custom`;
-    custom rect is expressed as fractions of the source frame and re-derived to the target
-    aspect, then clamped in-bounds.
-  - scale: `scale=720:1280` (or the target) with `force_original_aspect_ratio=increase`
-    followed by an exact crop, `setsar=1`, `fps` 24/25/30, `format=yuv420p`.
-  - captions: ASS cues built from the clip's transcript sentences, chunked to
-    `max_chars`, styled (size/position/primary/highlight/outline), burned via `subtitles`.
+  - crop: **no automatic crop**. Only a user-entered `custom` rectangle (fractions of the
+    source frame, clamped in-bounds) is applied before fitting; `center/left/right/top/bottom`
+    no longer zoom or cut the frame.
+  - canvas: the decoded source's own width/height (rotation-aware, even-aligned). Every input
+    uses `setsar=1,scale=W:H:force_original_aspect_ratio=decrease:flags=lanczos,pad=W:H:...`,
+    so the full frame is kept and mismatched sizes are padded, never cropped. The aspect
+    preset stays a project/file key and no longer forces a 720p cover-crop.
+  - captions: cues grouped from word-level transcript timing (native ASR tokens
+    or proportional words estimated inside timed SRT/VTT cues), so a clipped
+    sentence shows only the words actually spoken inside the clip range;
+    chunks respect `max_chars` and sentence pauses, ASS timestamps use libass's
+    centisecond format (`H:MM:SS.cc`), and cues are burned via `subtitles`.
   - audio: `loudnorm=I=-16:TP=-1.5:LRA=11`; optional music looped/trimmed with a 0.8 s
     fade and sidechain-ducked under speech (`sidechaincompress`), mixed with `amix`.
-  - encode: libx264 CRF 21, veryfast, AAC 128 kbit/s 48 kHz stereo, `+faststart`.
+  - encode: libx264 CRF 18, medium, AAC 128 kbit/s 48 kHz stereo, `+faststart` — the Final
+    preview and the export share this encode, so quality matches.
   - validation: existence, exact resolution, H.264, AAC, duration ±0.2 s, audio stream,
     size > 10 kB, and A/V duration delta < 0.1 s.
-- **Acceptance:** three aspects validate with the checks above; measured loudness ≈ −16 LUFS.
+- **Acceptance:** validation uses the reported native `resolution`, not the preset size;
+  measured loudness ≈ −16 LUFS.
 - **Constraints:** no face/subject tracking; no optical-flow stabilisation; music must be a
-  local file; output is always 720p-class (portrait 720×1280, landscape 1280×720, square 720×720).
+  local file; output is the source's native dimensions (e.g. the 1280×720 fixture), which may
+  differ from the selected 9:16 / 16:9 / 1:1 preset.
 - **UI:** per-clip editor — trim, aspect, fps, crop mode + manual rect, caption
   size/position/max chars/highlight, burn toggle, loudness toggle, music + volume,
-  save & render, inline preview and download.
+  save & render, inline preview and download. The prompter also exposes a project-level
+  **Captions: on/off** switch (default on) on the category and project pages: it persists in
+  `settings_json["burn_captions"]`, seeds new transcript candidates, bulk-updates existing
+  transcript and `source_combine` candidates (marking changed ones stale), and controls
+  burned-in subtitles for both render paths; the per-clip burn toggle remains an override.
 - **API/backend:** `POST /api/clip/clips/{sid}/render`, `PATCH /api/clip/clips/{sid}`,
   `GET /api/clip/clips/{sid}/file`; `app/clip/render.py`, `app/clip/jobs.py`.
 - **Docs:** this section, exact filter graph documented here.
+
+### B5a · Multi-source combine (one seamless video)
+
+- **Goal:** join several uploaded videos into one output MP4 with a visible choice of
+  smooth transitions or straightforward cuts, without changing the deterministic director
+  or transcript logic.
+- **Engine:** B (`combine` job, `render_combine()`).
+- **Behaviour:** sources are stored in upload order in
+  `settings_json["source_order"]` and can be reordered or removed through the API/UI;
+  that order is authoritative. Upload dedupes by SHA-256. With no `target_duration`,
+  each source contributes its whole duration (`start=0 → end=duration`), preserving the
+  legacy combine behaviour. When a target is supplied, the UI sends the **shortest
+  selected Target duration** and `fit_combine_segments()` trims every source
+  proportionally (all stay in order with positive ranges) so the final MP4 lands on
+  that timeframe; crossfade overlap is included in the fit. With transitions on (the
+  default), adjacent clips are joined by a short video `xfade` + audio `acrossfade`;
+  with transitions off, a plain `concat` produces straight cuts. The crossfade defaults
+  to 0.6 s, is user configurable in 0.1–1.5 s, and is capped at 35 % of the shorter
+  neighbouring clip so no boundary can consume a whole video. A target longer than the
+  available source material is rejected with an explicit 400/job error rather than
+  silently stretching or padding. Captions/loudness/ducking and validation follow B5.
+  Like the now-native single-source and assembly renders, a combine does **not** cover-crop
+  or downscale to the aspect preset: the output canvas is the first ordered source's exact
+  native width/height, encoded with `libx264 -preset medium -crf 18`. **Every** input goes
+  through `setsar=1,scale=...:force_original_aspect_ratio=decrease:flags=lanczos`
+  plus `pad=...:(ow-iw)/2:(oh-ih)/2` to that canvas. Sizes already matching scale 1:1
+  and are pixel-identical; no frame is cut. Normalising all inputs is required because
+  `xfade`/`concat` reject links with different dimensions, and a probe can disagree
+  with decoded frame size (rotation side data, SAR or a stale probe). A regression test
+  simulates exactly that mismatch (1080×1920 vs 1920×1080). Probe results now also carry
+  rotation-aware `display_width`/`display_height` so a rotated source chooses the correct
+  canvas. The first source's resolution and dimensions are preserved in both the Final
+  preview and the export.
+  Captions are grounded in each source's own timed transcript:
+  cached per-source SRT/VTT/ASR data is loaded from
+  `analysis/sources/{source_id}/transcript.json`, clipped to that source's selected range,
+  and shifted onto the combined timeline; cues overlapping a crossfade are trimmed
+  to the words still audible on each side of the fade midpoint.
+  `POST /sources/{sid}/transcript/import`, `GET /sources/{sid}/transcript` and
+  `POST /sources/{sid}/transcribe` manage those per-source transcripts, and the combine
+  job runs local ASR automatically for any source that lacks one when the backend is available.
+- **Acceptance:** two or more sources required; one selected render-ready candidate with
+  `score_json.assembly.kind = "source_combine"`, ordered source names/IDs, transition mode,
+  per-boundary fade durations and offsets, and `engine = "source-combine/v1"`. Both modes
+  produce a validated H.264/AAC file at the first source's native resolution (default
+  fixture 1280×720), reported as `resolution` / `source_resolution` with
+  `resolution_mode = "source-native"` and `crop = null`; the aspect preset remains the
+  project file/DB key (measured whole-source: 2-source fade 3.4 s, cut 4.0 s;
+  3-source fade 5.0 s with boundaries `[0.5, 0.5]`; measured targeted: 2 × 3 s sources
+  trimmed to a 5 s target in both fade and cut modes). The assembly records
+  `target_duration`, `duration_mode`, the source timeline length, `resolution`,
+  `source_resolution`, `resolution_mode` and the final timeframe. `assembly.captions` records whether burned-in subtitles are enabled, their
+  source (`per-source transcript/ASR`), final cue count and any per-source notices.
+  No subtitle copy is invented for a combine. Source
+  additions/reorders/removals mark existing candidates stale.
+  The same multi-source render path is used when the candidate is rendered or batch-exported
+  later: `_render_one()` dispatches `assembly.kind == "source_combine"` to `render_combine()`
+  with the candidate's stored per-source paths, order and transition metadata, so an Export
+  never re-renders it as a single-source transcript assembly. Missing source files are a hard
+  error rather than a silent fallback to the project's latest source.
+- **Constraints:** combine operates on uploaded source ranges, not transcript ranges
+  (transcript assembly is B4a/B5); it needs no *single-project* transcript, but burned-in
+  captions require a timed transcript for each source. A target trims those ranges
+  but never drops, reorders, stretches or pads a source. Adding/reordering/removing a
+  source requires an explicit re-combine to refresh the output. The director is not involved;
+  the combine job is fully deterministic.
+- **UI:** step 1 "Add videos" (multiple file picker), ordered source list with ↑/↓/Remove,
+  "Combine N videos (smooth/cuts)" button with the active **Target {n}s** chip (the
+  shortest selected Target duration), and a shared **Transitions: smooth/cut** toggle
+  on both the category page and project page (default on, persisted in project settings).
+  Each ordered source row also offers **SRT/VTT** import and **ASR** generation so captions
+  can be grounded in that source; the combine job runs ASR automatically when the backend
+  is available. The combine candidate shows the source order, transition mode, target and
+  the note "Uploaded source order is authoritative; burned-in subtitles come only from each
+  source transcript".
+- **API/backend:** `POST /api/clip/projects/{id}/sources` (append many),
+  `GET .../sources`, `PATCH .../sources/order`, `DELETE /api/clip/sources/{sid}`,
+  `POST .../combine` (`target_duration` optional); `app/clip/render.py`
+  (`render_combine`, `fit_combine_segments`, `max_combine_duration`, `build_combine_graph`,
+  `normalize_combine_segments`), `app/clip/jobs.py` (`_job_combine`, `_render_one`,
+  `_job_batch_export`), `app/clip/api.py`.
+- **Docs:** this section + `docs/TEST_REPORT.md` verification.
 
 ### B6 · Copy generation (titles, hooks, captions, hashtags)
 
@@ -168,7 +312,7 @@ criteria, constraints, UI, API/backend, documentation.
   per-field whether the output is literally contained in the clip text.
 - **Acceptance:** `title`, `hook`, `caption` are substrings of the clip transcript;
   every hashtag stem appears in the transcript.
-- **Constraints:** no LLM, no external topic suggestions, no claims about accuracy of the
+- **Constraints:** no model, no external topic suggestions, no claims about accuracy of the
   resulting hook.
 - **UI:** shown on each clip; "Regenerate copy" re-runs the templates.
 - **API/backend:** `app/clip/metadata.py`.
@@ -182,9 +326,15 @@ criteria, constraints, UI, API/backend, documentation.
   `data/clip_projects/<id>/exports/`, validating every output; a failing clip is recorded
   individually and does not abort the batch; `manifest.json` records source path,
   requested/succeeded/failed counts, per-item duration, size, validation, loudness,
-  hashtags and range.
+  hashtags and range. For a `source_combine` item the manifest additionally records the
+  ordered source paths, the `combine` render metadata (per-source ranges and order) and
+  the `transition` metadata (mode, boundaries, offsets), plus `resolution`,
+  `source_resolution` and `resolution_mode = "source-native"`; no transcript hashtags are
+  generated for it. The top-level manifest marks `source_combine` and lists `combine_sources`.
 - **Acceptance:** requested count equals exported count in a healthy run; manifest exists;
-  export listing matches files on disk.
+  export listing matches files on disk. A combined candidate exported from the Export level
+  produces one validated MP4 using every stored source in its saved order, in both smooth and
+  cut modes; it is never re-rendered from a single source.
 - **Constraints:** export directory is served read-only through a path-checked endpoint.
 - **UI:** step 5 — manifest counters, file list with sizes, per-item table.
 - **API/backend:** `POST /api/clip/projects/{id}/export-batch`,
@@ -246,8 +396,13 @@ data/clip_projects/<id>/
 | GET | `/api/clip/diagnostics` | FFmpeg/ffprobe resolution, whisper capability, probe fallback notice |
 | GET/POST | `/api/clip/projects` | list / create |
 | GET/PATCH/DELETE | `/api/clip/projects/{id}` | detail / update / delete (`delete_files`) |
-| POST | `/api/clip/projects/{id}/source` | upload source (`replace_existing`) |
-| GET | `/api/clip/projects/{id}/source/file` | stream current source |
+| POST | `/api/clip/projects/{id}/source` | upload/replace single source (`replace_existing`, legacy behaviour) |
+| GET | `/api/clip/projects/{id}/source/file` | stream last source in order |
+| POST | `/api/clip/projects/{id}/sources` | append several sources (upload order, SHA-256 dedupe) |
+| GET | `/api/clip/projects/{id}/sources` | list ordered sources |
+| PATCH | `/api/clip/projects/{id}/sources/order` | reorder sources (`source_ids`) |
+| DELETE | `/api/clip/sources/{sid}` | remove a source |
+| POST | `/api/clip/projects/{id}/combine` | combine job (`transitions`, `transition_seconds`, `target_duration`, `aspect`) |
 | POST | `/api/clip/projects/{id}/analyze` | structural analysis job |
 | POST | `/api/clip/projects/{id}/transcribe` | whisper.cpp job (503 when unavailable) |
 | GET/PUT | `/api/clip/projects/{id}/transcript` | read / replace cues |
@@ -270,10 +425,13 @@ Errors are JSON `{"detail": "..."}` with 400/404/409/413/415/503 as appropriate.
 ## 5. Frontend
 
 - `frontend/src/pages/ClipStudio.tsx` — capability panel (ASR state and reasons, manual
-  import guarantee, "manual crop, no tracking" statement), project creation, project grid.
-- `frontend/src/pages/ClipProject.tsx` — source/analysis, transcript (import, paste, edit),
-  highlight controls, per-clip editor with score bars, render/preview/download, exports and
-  job history.
+  import guarantee, "manual crop, no tracking" statement), project creation (sends `transitions`),
+  project grid.
+- `frontend/src/components/Prompter.tsx` — shared prompt box, five presets, suggestion chips,
+  One-clip/**Captions**/**Transitions** toggles and deterministic brief preview; the toggle persists to project settings.
+- `frontend/src/pages/ClipProject.tsx` — multi-source upload/order/remove and combine controls,
+  analysis, transcript (import, paste, edit), highlight controls, per-clip editor with score
+  bars, render/preview/download, exports and job history.
 - `frontend/src/lib/api.ts` — `clipApi` typed client; `App.tsx` routes `/clip`, `/clip/:id`;
   `Layout.tsx` nav entry "Auto-Clip Studio".
 
@@ -319,8 +477,11 @@ clean single-speaker macOS TTS with a known script.
 3. **Highlight quality is unvalidated against human judgement.** Scoring is inspectable
    and deterministic, but no reference ratings exist, so "better clips" is not claimed.
 4. **Music is not content-aware.** Ducking is a compressor, not beat/energy alignment.
-5. **One source per project.** Replacing a source intentionally discards its analysis,
-   transcript and clips.
+5. **Single-source replace still resets the project.** The legacy `.../source` endpoint
+   intentionally discards the previous source's analysis, transcript and clips. The
+   additive `.../sources` combine path keeps all uploaded files but needs an explicit
+   re-combine after any add/reorder/remove. Transcript assembly (B4a) and source-video
+   combine (B5a) are separate operations; neither invents transcript copy.
 6. **Standalone `ffprobe` absent in this environment.** Probing falls back to FFmpeg
    stderr parsing; the active method is recorded as `probe_source` on every source/render.
 7. **Long-source evidence uses synthetic media.** 1/5/15/30/60-minute files are TTS over

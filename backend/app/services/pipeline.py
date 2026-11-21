@@ -12,6 +12,7 @@ from ..core.config import MUSIC_DIR, SFX_DIR, settings
 from ..db.database import SessionLocal
 from ..db.models import Job, Project
 from . import project_store as ps
+from . import resume as resume_svc
 from .audio_mix import concat_wavs, mix_narration_music, pad_audio_to
 from .memory import MemorySampler, wait_for_memory
 from .render import concat_segments, mux_final, probe_video_info, render_scene_segment
@@ -62,6 +63,15 @@ def _style(project: Project) -> dict:
         return {**DEFAULT_STYLE, **(data if isinstance(data, dict) else {})}
     except Exception:
         return dict(DEFAULT_STYLE)
+
+
+def _remember_stage(pid: str, stage: str, project: Project, scenes: list[dict], pdir: Path) -> None:
+    """Record that a stage completed for the current inputs."""
+    try:
+        signature = resume_svc.stage_signature(pid, stage, project, scenes, pdir)
+        resume_svc.mark_stage(pid, stage, signature, pdir)
+    except Exception as exc:  # manifest is an optimization, never fail a render for it
+        _log(pid, f"resume manifest warning for {stage}: {exc}")
 
 
 def _resolve_music(track: str, pdir: Path | None = None) -> Path | None:
@@ -259,27 +269,30 @@ def _compose(db, job, project, scenes, timings, pdir, fps: int, style: dict, pre
     }
 
 
-def _finalize(db, job, project, result, t0, peak_mb):
+def _finalize(db, job, project, result, t0, peak_mb, append_history: bool = True, reused_stages: list[str] | None = None):
     result = {
         **result,
         "peak_memory_mb": peak_mb,
         "render_seconds": round(time.time() - t0, 2),
         "completed_at": _now().isoformat() + "Z",
     }
+    if reused_stages:
+        result["reused_stages"] = reused_stages
     pdir = ps.project_dir(project.id)
     ps.write_json(pdir / "result.json", result)
     hist_path = pdir / "renders" / "history.json"
     history = ps.read_json(hist_path, []) or []
-    history.append({
-        "at": result["completed_at"],
-        "video": result.get("final_video"),
-        "duration_sec": result.get("duration_sec"),
-        "size_bytes": result.get("size_bytes"),
-        "peak_memory_mb": peak_mb,
-        "fps": result.get("fps"),
-        "job_id": job.id,
-    })
-    ps.write_json(hist_path, history[-20:])
+    if append_history:
+        history.append({
+            "at": result["completed_at"],
+            "video": result.get("final_video"),
+            "duration_sec": result.get("duration_sec"),
+            "size_bytes": result.get("size_bytes"),
+            "peak_memory_mb": peak_mb,
+            "fps": result.get("fps"),
+            "job_id": job.id,
+        })
+        ps.write_json(hist_path, history[-20:])
     thumb = pdir / "images" / "scene_01.png"
     project.status = "completed"
     project.thumbnail = str(thumb) if thumb.exists() else ""
@@ -328,6 +341,7 @@ def run_full_pipeline(job_id: str) -> None:
         if not project:
             return
         pid = project.id
+        pdir = ps.project_dir(pid)
         fps = int(project.fps or 30)
         _set(db, job, status="running", stage="script", progress=2, message="Generating script...", started_at=_now())
         _log(pid, f"pipeline start (fps={fps}, aspect={project.aspect_ratio})")
@@ -336,10 +350,10 @@ def run_full_pipeline(job_id: str) -> None:
         ps.save_script(pid, script)
         scenes = script.get("scenes", [])
         ps.save_storyboard(pid, scenes)
+        _remember_stage(pid, "script", project, scenes, pdir)
         _check_cancel(db, job_id)
 
         _set(db, job, stage="visuals", progress=8, message="Generating visual scenes...")
-        pdir = ps.project_dir(pid)
         for i, sc in enumerate(scenes):
             _check_cancel(db, job_id)
             img_path = pdir / "images" / f"scene_{i + 1:02d}.png"
@@ -348,17 +362,23 @@ def run_full_pipeline(job_id: str) -> None:
             sc["visual_kind"] = "animated_graphic"
             _set(db, job, progress=8 + int(22 * (i + 1) / max(1, len(scenes))), message=f"Visuals: scene {i + 1}/{len(scenes)}")
         ps.save_storyboard(pid, scenes)
+        _remember_stage(pid, "visuals", project, scenes, pdir)
 
         _set(db, job, stage="tts", progress=38, message="Generating narration...")
         timings, total = _build_scene_assets(db, job, project, scenes, pdir, fps)
         ps.save_storyboard(pid, scenes)
         ps.write_json(pdir / "timings.json", {"timings": timings, "total_sec": round(total, 3)})
+        _remember_stage(pid, "tts", project, scenes, pdir)
 
         _set(db, job, stage="subtitles", progress=60, message="Generating subtitles...")
         style = _style(project)
 
         _render_scenes(db, job, project, scenes, pdir, fps)
+        _remember_stage(pid, "scenes", project, scenes, pdir)
         result = _compose(db, job, project, scenes, timings, pdir, fps, style, preserve_custom=False)
+        _remember_stage(pid, "audio_mix", project, scenes, pdir)
+        _remember_stage(pid, "subtitles", project, scenes, pdir)
+        _remember_stage(pid, "compose", project, scenes, pdir)
         peak = sampler.stop()
         _finalize(db, job, project, result, t0, peak)
         _log(pid, f"pipeline succeeded: {result['final_video']} ({result.get('duration_sec')}s, peak {peak}MB)")
@@ -370,7 +390,7 @@ def run_full_pipeline(job_id: str) -> None:
 
 
 def run_rerender(project_id: str, job_id: str, burn_subs: bool | None = None) -> None:
-    """Re-render from stored scenes/assets (re-synthesizes narration only when text changed)."""
+    """Re-render from stored scenes/assets, reusing only verified completed stages."""
     db = SessionLocal()
     sampler = MemorySampler().start()
     t0 = time.time()
@@ -389,30 +409,78 @@ def run_rerender(project_id: str, job_id: str, burn_subs: bool | None = None) ->
             project.burn_subs = bool(burn_subs)
             db.commit()
 
-        # Ensure images exist
+        # Normalize paths first so skipped stages still have complete storyboard metadata.
         for i, sc in enumerate(scenes):
-            _check_cancel(db, job_id)
-            img = Path(sc.get("image_path") or pdir / "images" / f"scene_{i + 1:02d}.png")
-            if not img.exists():
-                generate_scene_image(sc, img, aspect=project.aspect_ratio, style=project.style, idx=i)
+            sc.setdefault("image_path", str(pdir / "images" / f"scene_{i + 1:02d}.png"))
+            sc.setdefault("audio_path", str(pdir / "audio" / f"scene_{i + 1:02d}.wav"))
+            sc.setdefault("video_path", str(pdir / "video" / "scenes" / f"scene_{i + 1:02d}.mp4"))
+        ps.save_storyboard(project_id, scenes)
+
+        plan = resume_svc.build_plan(project_id, project, scenes, pdir)
+        reused = [stage for stage in resume_svc.STAGES if stage != "script" and plan[stage]["skip"]]
+        if reused:
+            _set(db, job, message="Reusing verified stages: " + ", ".join(reused))
+
+        if not plan["visuals"]["skip"]:
+            for i, sc in enumerate(scenes):
+                _check_cancel(db, job_id)
+                img = Path(sc["image_path"])
+                if not img.exists():
+                    generate_scene_image(sc, img, aspect=project.aspect_ratio, style=project.style, idx=i)
                 sc["image_path"] = str(img)
                 sc["visual_kind"] = "animated_graphic"
-            else:
-                sc["image_path"] = str(img)
-        ps.save_storyboard(project_id, scenes)
+            ps.save_storyboard(project_id, scenes)
+            _remember_stage(project_id, "visuals", project, scenes, pdir)
+        else:
+            _set(db, job, progress=15, message="Reusing saved visuals")
 
-        _set(db, job, stage="tts", progress=20, message="Verifying narration...")
-        timings, total = _build_scene_assets(db, job, project, scenes, pdir, fps, regenerate_audio=False)
-        ps.save_storyboard(project_id, scenes)
-        ps.write_json(pdir / "timings.json", {"timings": timings, "total_sec": round(total, 3)})
+        if not plan["tts"]["skip"]:
+            _set(db, job, stage="tts", progress=20, message="Verifying narration...")
+            timings, total = _build_scene_assets(db, job, project, scenes, pdir, fps, regenerate_audio=False)
+            ps.save_storyboard(project_id, scenes)
+            ps.write_json(pdir / "timings.json", {"timings": timings, "total_sec": round(total, 3)})
+            _remember_stage(project_id, "tts", project, scenes, pdir)
+        else:
+            timing_data = ps.read_json(pdir / "timings.json", {}) or {}
+            timings = timing_data.get("timings", [])
+            _set(db, job, stage="tts", progress=38, message="Reusing saved narration")
 
         style = _style(project)
+        plan = resume_svc.build_plan(project_id, project, scenes, pdir)  # refresh after visuals/tts
+        reused = [stage for stage in resume_svc.STAGES if stage != "script" and plan[stage]["skip"]]
 
-        _render_scenes(db, job, project, scenes, pdir, fps, start_progress=45)
-        result = _compose(db, job, project, scenes, timings, pdir, fps, style)
+        if not plan["scenes"]["skip"]:
+            _set(db, job, stage="scenes", progress=45, message="Rendering scene videos...")
+            _render_scenes(db, job, project, scenes, pdir, fps, start_progress=45)
+            _remember_stage(project_id, "scenes", project, scenes, pdir)
+        else:
+            _set(db, job, stage="scenes", progress=72, message="Reusing saved scene videos")
+
+        if plan["compose"]["skip"]:
+            cached = ps.read_json(pdir / "result.json", None) or {}
+            final_video = cached.get("final_video")
+            if not (final_video and Path(final_video).exists() and Path(final_video).stat().st_size > 0):
+                plan["compose"]["skip"] = False
+                reused = [s for s in reused if s != "compose"]
+
+        if not plan["compose"]["skip"]:
+            result = _compose(db, job, project, scenes, timings, pdir, fps, style)
+            _remember_stage(project_id, "audio_mix", project, scenes, pdir)
+            _remember_stage(project_id, "subtitles", project, scenes, pdir)
+            _remember_stage(project_id, "compose", project, scenes, pdir)
+        else:
+            result = ps.read_json(pdir / "result.json", {}) or {}
+            _set(db, job, stage="compose", progress=96, message="Reusing validated final render")
+
         peak = sampler.stop()
-        _finalize(db, job, project, result, t0, peak)
-        _log(project_id, f"rerender succeeded: {result['final_video']}")
+        _finalize(
+            db, job, project, result, t0, peak,
+            append_history=not plan["compose"]["skip"],
+            reused_stages=sorted(set(reused)),
+        )
+        if plan["compose"]["skip"]:
+            result = {**result, "peak_memory_mb": peak}
+        _log(project_id, f"rerender succeeded: {result.get('final_video')}")
     except Exception as exc:  # noqa: BLE001
         sampler.stop()
         _fail(db, job_id, exc)

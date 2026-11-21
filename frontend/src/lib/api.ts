@@ -288,7 +288,13 @@ export type ClipCandidateT = {
     metrics?: Record<string, any>;
     weights?: Record<string, number>;
     params?: any;
+    copy?: any;
+    assembly?: any;
+    segments?: any[];
   } | null;
+  copy?: any;
+  assembly?: any;
+  segments?: any[];
   reason: string;
   selected: boolean;
   state: string;
@@ -308,6 +314,10 @@ export type ClipProjectT = {
   created_at?: string | null;
   updated_at?: string | null;
   source: ClipSourceT | null;
+  sources: ClipSourceT[];
+  source_count: number;
+  transitions: boolean;
+  burn_captions: boolean;
   counts: { clips: number; rendered: number };
   transcript: { present: boolean; backend?: string | null; timing?: string | null; sentences?: number } | null;
   analysis_ready: boolean;
@@ -344,6 +354,10 @@ export type ClipProjectDetailT = {
 async function clipUpload(path: string, file: File) {
   const fd = new FormData();
   fd.append('file', file);
+  return clipUploadForm(path, fd);
+}
+
+async function clipUploadForm(path: string, fd: FormData) {
   const r = await fetch(BASE + path, { method: 'POST', body: fd });
   if (!r.ok) {
     let detail = r.statusText;
@@ -367,7 +381,7 @@ export const clipApi = {
   diagnostics: () => req<any>('/api/clip/diagnostics'),
   projects: () => req<{ projects: ClipProjectT[] }>('/api/clip/projects'),
   project: (id: string) => req<ClipProjectDetailT>(`/api/clip/projects/${id}`),
-  createProject: (body: { title?: string; aspect_ratio?: string; preset?: string; language?: string }) =>
+  createProject: (body: { title?: string; aspect_ratio?: string; preset?: string; language?: string; prompt?: string; director_preset?: string; single_clip?: boolean; burn_captions?: boolean; transitions?: boolean }) =>
     req<{ project: ClipProjectT }>('/api/clip/projects', { method: 'POST', body: JSON.stringify(body) }),
   updateProject: (id: string, body: any) =>
     req<{ project: ClipProjectT }>(`/api/clip/projects/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
@@ -375,7 +389,30 @@ export const clipApi = {
     req(`/api/clip/projects/${id}?delete_files=${deleteFiles}`, { method: 'DELETE' }),
   uploadSource: (id: string, file: File, replace = true) =>
     clipUpload(`/api/clip/projects/${id}/source?replace_existing=${replace}`, file),
+  uploadSources: (id: string, files: File[]) => {
+    const fd = new FormData();
+    files.forEach((f) => fd.append('files', f));
+    return clipUploadForm(`/api/clip/projects/${id}/sources`, fd);
+  },
+  sources: (id: string) => req<{ sources: ClipSourceT[]; project: ClipProjectT }>(`/api/clip/projects/${id}/sources`),
+  reorderSources: (id: string, sourceIds: string[]) =>
+    req<{ sources: ClipSourceT[]; project: ClipProjectT }>(`/api/clip/projects/${id}/sources/order`, {
+      method: 'PATCH', body: JSON.stringify({ source_ids: sourceIds }),
+    }),
+  deleteSource: (sid: string) =>
+    req<{ ok: boolean; sources: ClipSourceT[]; project: ClipProjectT }>(`/api/clip/sources/${sid}`, { method: 'DELETE' }),
+  combine: (id: string, body: { transitions?: boolean; transition_seconds?: number; target_duration?: number; aspect?: string } = {}) =>
+    req<{ job: ClipJobT }>(`/api/clip/projects/${id}/combine`, { method: 'POST', body: JSON.stringify(body) }),
   sourceUrl: (id: string) => `/api/clip/projects/${id}/source/file`,
+  sourceFileUrl: (sid: string) => `/api/clip/sources/${sid}/file`,
+  sourceTranscript: (sid: string) => req<{ transcript: any }>(`/api/clip/sources/${sid}/transcript`),
+  importSourceTranscript: (sid: string, content: string, filename = '') =>
+    req<{ transcript: any }>(`/api/clip/sources/${sid}/transcript/import`, {
+      method: 'POST',
+      body: JSON.stringify({ content, filename }),
+    }),
+  transcribeSource: (sid: string) =>
+    req<{ job: ClipJobT }>(`/api/clip/sources/${sid}/transcribe`, { method: 'POST' }),
   analyze: (id: string) => req<{ job: ClipJobT }>(`/api/clip/projects/${id}/analyze`, { method: 'POST' }),
   transcribe: (id: string) => req<{ job: ClipJobT }>(`/api/clip/projects/${id}/transcribe`, { method: 'POST' }),
   transcript: (id: string) => req<{ transcript: any; capability: any }>(`/api/clip/projects/${id}/transcript`),
@@ -389,10 +426,30 @@ export const clipApi = {
       method: 'PUT',
       body: JSON.stringify({ segments }),
     }),
-  highlights: (id: string, durations: number[], count: number) =>
+  directorPresets: () =>
+    req<{ default: string; presets: { id: string; label: string; instruction: string; default_prompt: string }[] }>(
+      '/api/clip/prompt/presets',
+    ),
+  previewDirection: (id: string, body: { prompt: string; preset: string; single_clip?: boolean }) =>
+    req<{ plan: any; brief: any; notice: string }>(
+      `/api/clip/projects/${id}/direction/preview`,
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
+  highlights: (
+    id: string,
+    durations: number[],
+    count: number,
+    prompt = '',
+    opts?: { director_preset?: string; single_clip?: boolean },
+  ) =>
     req<{ job: ClipJobT }>(`/api/clip/projects/${id}/highlights`, {
       method: 'POST',
-      body: JSON.stringify({ durations, count }),
+      body: JSON.stringify({ durations, count, prompt, ...(opts || {}) }),
+    }),
+  parsePrompt: (prompt: string, preset = 'tiktok', singleClip = false) =>
+    req<{ brief: any; preset: string }>('/api/clip/prompt/parse', {
+      method: 'POST',
+      body: JSON.stringify({ prompt, preset, single_clip: singleClip }),
     }),
   clips: (id: string) => req<{ clips: ClipCandidateT[] }>(`/api/clip/projects/${id}/clips`),
   patchClip: (cid: string, body: any) => req<{ clip: ClipCandidateT }>(`/api/clip/clips/${cid}`, { method: 'PATCH', body: JSON.stringify(body) }),

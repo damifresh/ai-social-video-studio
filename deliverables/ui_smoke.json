@@ -1,0 +1,141 @@
+{
+  "id": "ui-smoke-mwp3rsk6",
+  "started_at": "2026-11-20T14:56:59.399Z",
+  "finished_at": "2026-11-20T14:57:14.838Z",
+  "status": "PASS",
+  "total": 25,
+  "pass": 25,
+  "fail": 0,
+  "checks": [
+    {
+      "name": "initial Dashboard route renders",
+      "status": "PASS",
+      "detail": "Dashboard"
+    },
+    {
+      "name": "all primary navigation links are present",
+      "status": "PASS",
+      "detail": "7/7 labels"
+    },
+    {
+      "name": "click Auto-Clip Studio → /clip",
+      "status": "PASS",
+      "detail": "New clip project"
+    },
+    {
+      "name": "click M2 Benchmark → /benchmark",
+      "status": "PASS",
+      "detail": "M2 HARDWARE BENCHMARK"
+    },
+    {
+      "name": "click Settings → /settings",
+      "status": "PASS",
+      "detail": "Settings & system"
+    },
+    {
+      "name": "click Dashboard → /",
+      "status": "PASS",
+      "detail": "Dashboard"
+    },
+    {
+      "name": "built-in director presets render",
+      "status": "PASS",
+      "detail": "5 presets"
+    },
+    {
+      "name": "prompter is visible on Auto-Clip Studio category",
+      "status": "PASS",
+      "detail": "3/3 chips, Preview OK"
+    },
+    {
+      "name": "local director is the only planner and reports status",
+      "status": "PASS",
+      "detail": "deterministic director only"
+    },
+    {
+      "name": "one-clip auto-clipping toggle is opt-in",
+      "status": "PASS",
+      "detail": "opt-in one-clip toggle OK"
+    },
+    {
+      "name": "captions toggle is on by default on the category page",
+      "status": "PASS",
+      "detail": "default-on toggle and status OK"
+    },
+    {
+      "name": "automatic transitions toggle is on by default",
+      "status": "PASS",
+      "detail": "default-on toggle and status OK"
+    },
+    {
+      "name": "create temporary clip project and open prompter workspace",
+      "status": "PASS",
+      "detail": "/clip/36ba7478-1657-4b78-99d1-85347b8ee18b"
+    },
+    {
+      "name": "prompter chat box and suggestion chips render",
+      "status": "PASS",
+      "detail": "3/3 chips"
+    },
+    {
+      "name": "prompter Preview parses the brief locally",
+      "status": "PASS",
+      "detail": "funny tone / TIKTOK / habits / avoid jargon / 15s"
+    },
+    {
+      "name": "import timed transcript for director plan",
+      "status": "PASS",
+      "detail": "4 cues"
+    },
+    {
+      "name": "director preview parses the deterministic plan",
+      "status": "PASS",
+      "detail": "director preview OK"
+    },
+    {
+      "name": "generated clips carry director audit metadata",
+      "status": "PASS",
+      "detail": "1 clips, grounded copy, brief_fit"
+    },
+    {
+      "name": "project captions toggle persists and updates transcript candidates",
+      "status": "PASS",
+      "detail": "project setting and transcript candidate defaults propagate"
+    },
+    {
+      "name": "project one-clip mode assembles one final video from ordered scenes",
+      "status": "PASS",
+      "detail": "1 selected grounded candidate from 2 ordered scenes; timeline 0–20s"
+    },
+    {
+      "name": "one-clip mode shows a playable final video preview before export",
+      "status": "PASS",
+      "detail": "rendered final MP4 preview ready (/api/clip/clips/fd73e394-214a-470d-83ee-73b6f209a76e/file?aspect=9:16)"
+    },
+    {
+      "name": "combined candidate burned-in captions follow the project toggle",
+      "status": "PASS",
+      "detail": "project captions toggle propagates to the combined candidate"
+    },
+    {
+      "name": "multiple videos upload, reorder and combine with cuts or smooth transitions",
+      "status": "PASS",
+      "detail": "2 sources reordered to a 5s target, cuts 5s, crossfade 5s and batch export succeeded"
+    },
+    {
+      "name": "loopback backend reports online",
+      "status": "PASS",
+      "detail": "online"
+    },
+    {
+      "name": "no uncaught page exceptions",
+      "status": "PASS",
+      "detail": "none"
+    }
+  ],
+  "environment": {
+    "node": "v26.13.0",
+    "electron": "dev app",
+    "cdp": true
+  }
+}
