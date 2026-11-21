@@ -20,7 +20,7 @@
 - `deliverables/demo_180s_16x9_720p.mp4` (~183.55 s, 1280×720, 3 min) + `.srt`
 - `deliverables/demo_329s_16x9_720p.mp4` (~329.1 s, 1280×720, 5-min target) + `.srt`, `demo_329s_16x9_result.json`
 - `deliverables/demo_75s_1x1_720p.mp4` (~74.6 s, 720×720, 1:1) + `.srt`
-- `deliverables/demo_packaged_app_74s_16x9_720p.mp4` (~73.7 s, 1280×720, rendered via packaged `.app`) + `.srt`
+- `deliverables/demo_packaged_app_74s_16x9_720p.mp4` (~73.7 s, 1280×720) + `.srt` — **recreated stand-in** for the GitHub export: trimmed from the local 16:9 render of project `81451eb3`; the original packaged-app capture was not recoverable after the upload workaround, so the earlier "rendered via packaged `.app`" provenance no longer applies to this file.
 - `deliverables/acceptance_extended.json` — measured extended acceptance runs (5-min 16:9, 1-min 1:1)
 - `docs/screenshots/01-dashboard-full.png` — packaged app running (full desktop capture)
 
